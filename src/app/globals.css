@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Hero Brand Colors */
+  --color-hero-blue: #073889;
+  --color-hero-orange: #F46015;
+  --color-hero-blue-bold: #0065CC;
+  --color-hero-blue-medium: #4197CB;
+  --color-hero-blue-soft: #D3E6F0;
+  --color-hero-blue-hairline: #E9F4F8;
+  --color-hero-grey-black: #242629;
+  --color-hero-grey-regular: #9496A1;
+  --color-hero-grey-light: #D8D9DC;
+
+  /* Semantic */
+  --color-background: #ffffff;
+  --color-foreground: #242629;
+  --color-sidebar: #073889;
+  --color-sidebar-text: #ffffff;
+
+  /* Chart series */
+  --color-chart-1: #073889;
+  --color-chart-2: #F46015;
+  --color-chart-3: #0065CC;
+  --color-chart-4: #4197CB;
+  --color-chart-5: #9ECAE2;
+  --color-chart-6: #FDE1B6;
+
+  /* Radii */
+  --radius-card: 8px;
+  --radius-input: 6px;
+  --radius-button: 4px;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Exo", sans-serif;
+}

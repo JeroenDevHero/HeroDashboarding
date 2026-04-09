@@ -1,0 +1,26 @@
+export default function DashboardsPage() {
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-hero-grey-black">
+          Dashboards
+        </h1>
+        <a
+          href="/dashboards/new"
+          className="flex items-center gap-1 rounded-[var(--radius-button)] bg-hero-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-hero-orange/90"
+        >
+          <span className="material-symbols-rounded text-[18px]">add</span>
+          Nieuw dashboard
+        </a>
+      </div>
+      <div className="rounded-[var(--radius-card)] bg-white p-12 text-center shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
+        <span className="material-symbols-rounded text-[48px] text-hero-grey-light">
+          grid_view
+        </span>
+        <p className="mt-3 text-sm text-hero-grey-regular">
+          Nog geen dashboards. Maak er een aan of gebruik de AI Assistent.
+        </p>
+      </div>
+    </div>
+  );
+}
