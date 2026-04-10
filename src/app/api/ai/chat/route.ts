@@ -58,7 +58,9 @@ async function saveConversationProgress(
     .eq("user_id", userId);
 }
 
-const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent, aangedreven door Claude Opus 4.6 (het nieuwste en krachtigste AI-model van Anthropic). Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
+const AI_MODEL = "claude-opus-4-6";
+
+const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent, aangedreven door ${AI_MODEL} (Anthropic). Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
 
 STRENGE REGELS:
 - Gebruik UITSLUITEND data uit de gekoppelde databronnen. Verzin NOOIT data, feiten, of voorbeelden.
@@ -455,7 +457,7 @@ ${intelligenceSummaries}`;
 
     // Start streaming response from Claude - now with full context pre-loaded
     const stream = await anthropic.messages.stream({
-      model: "claude-opus-4-6",
+      model: AI_MODEL,
       max_tokens: 16384,
       system: enrichedSystemPrompt,
       tools: TOOLS,
@@ -781,7 +783,7 @@ ${intelligenceSummaries}`;
             ];
 
             currentStream = await anthropic.messages.stream({
-              model: "claude-opus-4-6",
+              model: AI_MODEL,
               max_tokens: 16384,
               system: enrichedSystemPrompt,
               tools: TOOLS,
