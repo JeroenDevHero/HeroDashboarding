@@ -18,6 +18,28 @@ interface RebuildWizardProps {
 
 type Step = "review" | "starting";
 
+/** Score how relevant a klip is to a tab name */
+function scoreRelevance(klipName: string, tabName: string): number {
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const klipNorm = normalize(klipName);
+  const tabNorm = normalize(tabName);
+
+  // Exact match in name
+  if (klipNorm.includes(tabNorm) || tabNorm.includes(klipNorm)) return 100;
+
+  // Word-level matching
+  const tabWords = tabNorm.split(/\s+/).filter((w) => w.length > 2);
+  if (tabWords.length === 0) return 0;
+
+  let matchedWords = 0;
+  for (const word of tabWords) {
+    if (klipNorm.includes(word)) matchedWords++;
+  }
+
+  return Math.round((matchedWords / tabWords.length) * 80);
+}
+
 export default function RebuildWizard({
   tabId,
   tabName,
@@ -28,20 +50,38 @@ export default function RebuildWizard({
   const [step, setStep] = useState<Step>("review");
   const [dashboardName, setDashboardName] = useState(tabName);
   const [userContext, setUserContext] = useState("");
-  const [selectedKlips, setSelectedKlips] = useState<Set<string>>(
-    new Set(klips.map((k) => k.name))
-  );
   const [klipSearch, setKlipSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredKlips = klipSearch
-    ? klips.filter(
+  // Score and sort klips by relevance to tab name
+  const scoredKlips = klips
+    .map((k) => ({ ...k, score: scoreRelevance(k.name, tabName) }))
+    .sort((a, b) => b.score - a.score);
+
+  const relevantKlips = scoredKlips.filter((k) => k.score > 0);
+  const otherKlips = scoredKlips.filter((k) => k.score === 0);
+
+  // Pre-select only relevant klips
+  const [selectedKlips, setSelectedKlips] = useState<Set<string>>(
+    new Set(relevantKlips.map((k) => k.name))
+  );
+
+  const filteredRelevant = klipSearch
+    ? relevantKlips.filter(
         (k) =>
           k.name?.toLowerCase().includes(klipSearch.toLowerCase()) ||
           k.description?.toLowerCase().includes(klipSearch.toLowerCase())
       )
-    : klips;
+    : relevantKlips;
+
+  const filteredOther = klipSearch
+    ? otherKlips.filter(
+        (k) =>
+          k.name?.toLowerCase().includes(klipSearch.toLowerCase()) ||
+          k.description?.toLowerCase().includes(klipSearch.toLowerCase())
+      )
+    : otherKlips;
 
   const toggleKlip = (name: string) => {
     setSelectedKlips((prev) => {
@@ -55,8 +95,8 @@ export default function RebuildWizard({
     });
   };
 
-  const selectAll = () => {
-    setSelectedKlips(new Set(klips.map((k) => k.name)));
+  const selectAllRelevant = () => {
+    setSelectedKlips(new Set(relevantKlips.map((k) => k.name)));
   };
 
   const selectNone = () => {
@@ -181,52 +221,48 @@ export default function RebuildWizard({
                 onChange={(e) => setKlipSearch(e.target.value)}
               />
             </div>
-            <Button variant="ghost" size="sm" onClick={selectAll}>
-              Alles
+            <Button variant="ghost" size="sm" onClick={selectAllRelevant}>
+              Gerelateerd
             </Button>
             <Button variant="ghost" size="sm" onClick={selectNone}>
               Geen
             </Button>
           </div>
 
-          {/* Klip list */}
-          {filteredKlips.length === 0 ? (
+          {/* Relevant klips */}
+          {filteredRelevant.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs font-semibold text-hero-blue uppercase tracking-wide flex items-center gap-1">
+                <span className="material-symbols-rounded text-[14px]">stars</span>
+                Gerelateerd aan &ldquo;{tabName}&rdquo; ({filteredRelevant.length})
+              </h3>
+              <div className="max-h-60 overflow-auto rounded-lg border border-hero-blue-soft">
+                {filteredRelevant.map((klip) => (
+                  <KlipRow key={klip.id} klip={klip} selected={selectedKlips.has(klip.name)} onToggle={() => toggleKlip(klip.name)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Other klips (collapsed by default) */}
+          {filteredOther.length > 0 && (
+            <details className="group">
+              <summary className="mb-2 text-xs font-semibold text-hero-grey-regular uppercase tracking-wide cursor-pointer flex items-center gap-1">
+                <span className="material-symbols-rounded text-[14px] transition-transform group-open:rotate-90">chevron_right</span>
+                Overige klips ({filteredOther.length})
+              </summary>
+              <div className="max-h-48 overflow-auto rounded-lg border border-hero-grey-light">
+                {filteredOther.map((klip) => (
+                  <KlipRow key={klip.id} klip={klip} selected={selectedKlips.has(klip.name)} onToggle={() => toggleKlip(klip.name)} />
+                ))}
+              </div>
+            </details>
+          )}
+
+          {filteredRelevant.length === 0 && filteredOther.length === 0 && (
             <p className="py-4 text-center text-sm text-hero-grey-regular">
               Geen klips gevonden.
             </p>
-          ) : (
-            <div className="max-h-80 overflow-auto rounded-lg border border-hero-grey-light">
-              {filteredKlips.map((klip) => {
-                const isSelected = selectedKlips.has(klip.name);
-                return (
-                  <label
-                    key={klip.id}
-                    className={`flex cursor-pointer items-center gap-3 border-b border-hero-grey-light/50 px-4 py-3 transition-colors last:border-0 ${
-                      isSelected
-                        ? "bg-hero-blue-hairline/50"
-                        : "hover:bg-hero-blue-hairline/30"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleKlip(klip.name)}
-                      className="h-4 w-4 rounded border-hero-grey-light text-hero-blue focus:ring-hero-blue-medium/30"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-hero-grey-black truncate">
-                        {klip.name}
-                      </p>
-                      {klip.description && (
-                        <p className="text-xs text-hero-grey-regular truncate">
-                          {klip.description}
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
           )}
         </div>
       </Card>
@@ -260,5 +296,37 @@ export default function RebuildWizard({
         </Button>
       </div>
     </div>
+  );
+}
+
+function KlipRow({ klip, selected, onToggle }: { klip: KlipfolioKlip & { score?: number }; selected: boolean; onToggle: () => void }) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-3 border-b border-hero-grey-light/50 px-4 py-2.5 transition-colors last:border-0 ${
+        selected ? "bg-hero-blue-hairline/50" : "hover:bg-hero-blue-hairline/30"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        className="h-4 w-4 rounded border-hero-grey-light text-hero-blue focus:ring-hero-blue-medium/30"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-hero-grey-black truncate">
+          {klip.name}
+        </p>
+        {klip.description && (
+          <p className="text-xs text-hero-grey-regular truncate">
+            {klip.description}
+          </p>
+        )}
+      </div>
+      {klip.score !== undefined && klip.score > 0 && (
+        <span className="text-[10px] text-hero-blue-medium shrink-0">
+          {klip.score}%
+        </span>
+      )}
+    </label>
   );
 }

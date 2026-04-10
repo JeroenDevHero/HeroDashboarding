@@ -36,7 +36,7 @@ export default async function RebuildPage({
   try {
     const [tab, klipsResult] = await Promise.all([
       getKlipfolioTab(tabId),
-      getKlipfolioKlips(100),
+      getKlipfolioKlips(800),
     ]);
 
     return (
