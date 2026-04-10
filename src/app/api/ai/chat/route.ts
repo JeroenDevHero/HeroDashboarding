@@ -5,6 +5,7 @@ import {
   executeCreateKlip,
   executePreviewData,
   executeListDatasources,
+  executeGetDataCatalog,
 } from "@/lib/ai/tools";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +73,10 @@ Richtlijnen:
 - Gebruik in config nette beschrijvingen, geen technische veldnamen met underscores
 - Getallen worden automatisch geformateerd met punten bij duizendtallen (1.000.000)
 - Begin altijd met het ophalen van beschikbare databronnen, dan een data preview, en maak dan pas een klip aan
-- Maak het werk altijd helemaal af: verken de data, maak de klip aan, en bevestig dat het klaar is`;
+- Maak het werk altijd helemaal af: verken de data, maak de klip aan, en bevestig dat het klaar is
+- Gebruik ALTIJD eerst get_data_catalog om de datastructuur te begrijpen voordat je queries schrijft
+- De catalog toont alle tabellen, kolommen, types en voorbeelddata
+- Gebruik de exacte tabel- en kolomnamen uit de catalog in je queries`;
 
 const TOOLS: Anthropic.Messages.Tool[] = [
   {
@@ -192,6 +196,21 @@ const TOOLS: Anthropic.Messages.Tool[] = [
       required: [],
     },
   },
+  {
+    name: "get_data_catalog",
+    description:
+      "Haal de volledige datastructuur op van een databron: alle tabellen, kolommen, types en voorbeelddata. Gebruik dit ALTIJD voordat je queries schrijft, zodat je de juiste tabel- en kolomnamen kent.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        data_source_id: {
+          type: "string",
+          description: "UUID van de databron",
+        },
+      },
+      required: ["data_source_id"],
+    },
+  },
 ];
 
 /**
@@ -199,6 +218,11 @@ const TOOLS: Anthropic.Messages.Tool[] = [
  * context about what tools were previously called and what they returned.
  */
 function summarizeToolResult(toolName: string, result: unknown): string {
+  if (toolName === "get_data_catalog") {
+    return typeof result === "string"
+      ? `catalog opgehaald (${result.split("\n").filter((l) => l.startsWith("Tabel:")).length} tabellen)`
+      : "catalog opgehaald";
+  }
   if (!result || typeof result !== "object") return "voltooid";
   const r = result as Record<string, unknown>;
   switch (toolName) {
@@ -371,6 +395,13 @@ export async function POST(request: Request) {
                     break;
                   case "list_datasources":
                     result = await executeListDatasources(user.id);
+                    break;
+                  case "get_data_catalog":
+                    result = await executeGetDataCatalog(
+                      (
+                        toolBlock.input as { data_source_id: string }
+                      ).data_source_id
+                    );
                     break;
                   default:
                     result = { error: `Onbekende tool: ${toolBlock.name}` };

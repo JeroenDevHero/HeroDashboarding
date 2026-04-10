@@ -8,6 +8,7 @@ import {
   testDatabricksConnection,
   type DatabricksConfig,
 } from '@/lib/datasources/databricks';
+import { analyzeDatabricksSource } from '@/lib/datasources/catalog';
 
 export async function getDataSources() {
   const supabase = await createClient();
@@ -228,7 +229,65 @@ export async function testDataSourceConnection(id: string) {
 
   if (updateError) throw new Error(updateError.message);
 
+  // Fire-and-forget catalog analysis after successful connection test
+  if (testResult.success && typeSlug === 'databricks') {
+    const config = dataSource.connection_config as DatabricksConfig;
+    analyzeDatabricksSource(id, config).catch((err) =>
+      console.error('Catalog analysis failed:', err)
+    );
+  }
+
   revalidatePath('/datasources');
 
   return { status: newStatus, message: testResult.message };
+}
+
+export async function refreshCatalog(dataSourceId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  // Verify the user owns this data source (RLS-safe query)
+  const { data: owned, error: ownedError } = await supabase
+    .from('data_sources')
+    .select('id')
+    .eq('id', dataSourceId)
+    .eq('created_by', user.id)
+    .single();
+
+  if (ownedError || !owned) throw new Error('Databron niet gevonden');
+
+  // Fetch full config with admin client
+  const admin = createAdminClient();
+  const { data: dataSource, error: fetchError } = await admin
+    .from('data_sources')
+    .select(
+      `
+      *,
+      data_source_type:data_source_types (*)
+    `
+    )
+    .eq('id', dataSourceId)
+    .single();
+
+  if (fetchError || !dataSource) throw new Error('Databron niet gevonden');
+
+  const typeSlug = dataSource.data_source_type?.slug;
+
+  switch (typeSlug) {
+    case 'databricks': {
+      const config = dataSource.connection_config as DatabricksConfig;
+      // Fire-and-forget: don't block the response
+      analyzeDatabricksSource(dataSourceId, config).catch((err) =>
+        console.error('Catalog refresh failed:', err)
+      );
+      break;
+    }
+    default:
+      throw new Error(`Catalog analyse niet ondersteund voor type: ${typeSlug}`);
+  }
+
+  return { status: 'analyzing' };
 }

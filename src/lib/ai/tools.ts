@@ -3,6 +3,7 @@ import {
   executeDatabricksQuery,
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
+import { getCatalogSummary } from "@/lib/datasources/catalog";
 
 /** Valid klip_type enum values matching the Postgres enum */
 export type KlipType =
@@ -166,6 +167,12 @@ export async function executePreviewData(
     row_count: Array.isArray(data) ? data.length : 0,
     limited_to: limit,
   };
+}
+
+export async function executeGetDataCatalog(
+  dataSourceId: string
+): Promise<string> {
+  return getCatalogSummary(dataSourceId);
 }
 
 export async function executeListDatasources(userId: string) {

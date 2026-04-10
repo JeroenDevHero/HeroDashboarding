@@ -50,6 +50,8 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
   const router = useRouter();
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<Record<string, { status: string; message: string }>>({});
+  const [catalogRefreshingId, setCatalogRefreshingId] = useState<string | null>(null);
+  const [catalogResult, setCatalogResult] = useState<Record<string, { status: string; message: string }>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -72,6 +74,39 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
       }));
     } finally {
       setTestingId(null);
+    }
+  }
+
+  async function handleCatalogRefresh(id: string) {
+    setCatalogRefreshingId(id);
+    try {
+      const res = await fetch("/api/datasources/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data_source_id: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCatalogResult((prev) => ({
+          ...prev,
+          [id]: { status: "error", message: data.error || "Catalog verversen mislukt" },
+        }));
+      } else {
+        setCatalogResult((prev) => ({
+          ...prev,
+          [id]: { status: "success", message: "Catalog wordt geanalyseerd..." },
+        }));
+      }
+    } catch (err) {
+      setCatalogResult((prev) => ({
+        ...prev,
+        [id]: {
+          status: "error",
+          message: err instanceof Error ? err.message : "Catalog verversen mislukt",
+        },
+      }));
+    } finally {
+      setCatalogRefreshingId(null);
     }
   }
 
@@ -170,12 +205,32 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
                       Test
                     </Button>
                     <Button
+                      variant="secondary"
+                      size="sm"
+                      icon="sync"
+                      loading={catalogRefreshingId === ds.id}
+                      onClick={() => handleCatalogRefresh(ds.id)}
+                    >
+                      Catalog
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="sm"
                       icon="delete"
                       onClick={() => setDeleteId(ds.id)}
                     />
                   </div>
+                  {catalogResult[ds.id] && (
+                    <p
+                      className={`mt-1 text-[11px] text-right ${
+                        catalogResult[ds.id].status === "success"
+                          ? "text-emerald-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {catalogResult[ds.id].message}
+                    </p>
+                  )}
                 </td>
               </tr>
             ))}
