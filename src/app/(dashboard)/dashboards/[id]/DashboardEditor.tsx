@@ -2,7 +2,6 @@
 
 import { useState, useTransition, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Layout } from 'react-grid-layout';
 import DashboardGrid from '@/components/dashboard/DashboardGrid';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -81,7 +80,7 @@ export default function DashboardEditor({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [currentLayout, setCurrentLayout] = useState<Layout | null>(null);
+  const [currentLayout, setCurrentLayout] = useState<{ i: string; x: number; y: number; w: number; h: number }[] | null>(null);
 
   // Klips already on this dashboard
   const dashboardKlipIds = new Set(
@@ -105,22 +104,20 @@ export default function DashboardEditor({
     },
   }));
 
-  const handleLayoutChange = useCallback((layout: Layout) => {
-    setCurrentLayout(layout);
+  const handleLayoutChange = useCallback((layouts: { i: string; x: number; y: number; w: number; h: number }[]) => {
+    setCurrentLayout(layouts);
   }, []);
 
   const handleSaveLayout = () => {
-    if (!currentLayout || !Array.isArray(currentLayout)) return;
+    if (!currentLayout) return;
 
-    const layouts = (currentLayout as unknown as { i: string; x: number; y: number; w: number; h: number }[]).map(
-      (item) => ({
-        klip_id: item.i,
-        position_x: item.x,
-        position_y: item.y,
-        width: item.w,
-        height: item.h,
-      })
-    );
+    const layouts = currentLayout.map((item) => ({
+      klip_id: item.i,
+      position_x: item.x,
+      position_y: item.y,
+      width: item.w,
+      height: item.h,
+    }));
 
     startTransition(async () => {
       await updateDashboardLayout(dashboard.id, layouts);
