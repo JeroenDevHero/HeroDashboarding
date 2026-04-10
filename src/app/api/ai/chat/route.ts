@@ -15,49 +15,45 @@ import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
 export const dynamic = "force-dynamic";
 
 /**
- * Persist the conversation messages to ai_conversations.messages (JSONB).
- * Creates a new row if no conversationId is provided, otherwise upserts.
+ * Save conversation progress incrementally.
+ * Writes messages + a _meta entry with the current status to the DB so that
+ * progress is never lost when a stream disconnects or the user navigates away.
  */
-async function persistConversation(
+async function saveConversationProgress(
+  conversationId: string,
   userId: string,
-  conversationId: string | undefined,
   messages: { role: string; content: string }[],
+  status: "in_progress" | "completed" | "error",
   createdKlipIds: string[] = []
 ) {
   const supabase = createAdminClient();
 
-  const messagesJsonb = messages.map((m) => ({
+  const messagesJsonb: Record<string, unknown>[] = messages.map((m) => ({
     role: m.role,
     content: m.content,
     timestamp: new Date().toISOString(),
   }));
 
-  if (conversationId) {
-    // Update existing conversation
-    const updateData: Record<string, unknown> = {
-      messages: messagesJsonb,
-      updated_at: new Date().toISOString(),
-    };
-    if (createdKlipIds.length > 0) {
-      updateData.created_klip_ids = createdKlipIds;
-    }
-    await supabase
-      .from("ai_conversations")
-      .update(updateData)
-      .eq("id", conversationId)
-      .eq("user_id", userId);
-  } else {
-    // Create new conversation
-    const insertData: Record<string, unknown> = {
-      user_id: userId,
-      messages: messagesJsonb,
-      context_type: "klip_builder",
-    };
-    if (createdKlipIds.length > 0) {
-      insertData.created_klip_ids = createdKlipIds;
-    }
-    await supabase.from("ai_conversations").insert(insertData);
+  // Append a _meta entry so the client can detect conversation status
+  messagesJsonb.push({
+    role: "_meta",
+    status,
+    timestamp: new Date().toISOString(),
+  });
+
+  const updateData: Record<string, unknown> = {
+    messages: messagesJsonb,
+    updated_at: new Date().toISOString(),
+  };
+  if (createdKlipIds.length > 0) {
+    updateData.created_klip_ids = createdKlipIds;
   }
+
+  await supabase
+    .from("ai_conversations")
+    .update(updateData)
+    .eq("id", conversationId)
+    .eq("user_id", userId);
 }
 
 const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
@@ -333,7 +329,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, conversationId } = body as {
+    const { messages, conversationId: incomingConversationId } = body as {
       messages: { role: string; content: string }[];
       conversationId?: string;
     };
@@ -342,6 +338,38 @@ export async function POST(request: Request) {
       return new Response(
         JSON.stringify({ error: "Berichten zijn vereist" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Ensure we have a conversation ID. If the client sent one, use it.
+    // Otherwise, create a new conversation row so we can save progress from the start.
+    let conversationId = incomingConversationId;
+    if (!conversationId) {
+      const adminSupa = createAdminClient();
+      const { data: newConv } = await adminSupa
+        .from("ai_conversations")
+        .insert({
+          user_id: user.id,
+          title: "Nieuw gesprek",
+          context_type: "klip_builder",
+          messages: [],
+        })
+        .select("id")
+        .single();
+      if (newConv) {
+        conversationId = newConv.id;
+      }
+    }
+
+    // Save the user message(s) immediately so they survive a disconnect
+    if (conversationId) {
+      saveConversationProgress(
+        conversationId,
+        user.id,
+        messages,
+        "in_progress"
+      ).catch((err) =>
+        console.error("[AI Chat] Failed to save initial messages:", err)
       );
     }
 
@@ -424,6 +452,15 @@ ${intelligenceSummaries}`;
     const readable = new ReadableStream({
       async start(controller) {
         console.log("[AI Chat] Stream started");
+
+        // Send conversation_init as the very first event so the client knows the ID
+        if (conversationId) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "conversation_init", conversation_id: conversationId })}\n\n`
+            )
+          );
+        }
 
         // Send keepalive as proper SSE data events every 3 seconds
         const keepalive = setInterval(() => {
@@ -649,6 +686,19 @@ ${intelligenceSummaries}`;
               allMessages.push({ role: "assistant", content: assistantText });
             }
 
+            // Save progress after each tool round so nothing is lost on disconnect
+            if (conversationId) {
+              saveConversationProgress(
+                conversationId,
+                user.id,
+                allMessages,
+                "in_progress",
+                createdKlipIds
+              ).catch((err) =>
+                console.error("[AI Chat] Failed to save round progress:", err)
+              );
+            }
+
             // Continue conversation with tool results
             currentMessages = [
               ...currentMessages,
@@ -665,20 +715,37 @@ ${intelligenceSummaries}`;
             });
           }
 
-          // Persist conversation to ai_conversations table
-          persistConversation(
-            user.id,
-            conversationId,
-            allMessages,
-            createdKlipIds
-          ).catch((err) => {
-            console.error("Failed to persist AI conversation:", err);
-          });
+          // Final save with "completed" status
+          if (conversationId) {
+            saveConversationProgress(
+              conversationId,
+              user.id,
+              allMessages,
+              "completed",
+              createdKlipIds
+            ).catch((err) => {
+              console.error("Failed to persist AI conversation:", err);
+            });
+          }
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
           console.error("[AI Chat] Stream error:", error instanceof Error ? error.message : error);
+
+          // Save whatever we have so far with "error" status
+          if (conversationId) {
+            saveConversationProgress(
+              conversationId,
+              user.id,
+              allMessages,
+              "error",
+              createdKlipIds
+            ).catch((err) => {
+              console.error("Failed to save error state:", err);
+            });
+          }
+
           const errorMessage =
             error instanceof Error ? error.message : "Stream fout";
           controller.enqueue(

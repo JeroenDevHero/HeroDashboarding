@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAIChat } from "@/lib/hooks/useAIChat";
-import type { ChatMessage as ChatMessageType, ToolCall } from "@/lib/hooks/useAIChat";
+import type { ChatMessage as ChatMessageType, ToolCall, ConnectionStatus } from "@/lib/hooks/useAIChat";
 import Button from "@/components/ui/Button";
 import ChatMessage from "./ChatMessage";
 
@@ -11,6 +11,7 @@ export type { ToolCall };
 interface AIChatProps {
   conversationId: string | null;
   initialMessages: ChatMessageType[];
+  wasInProgress?: boolean;
   onConversationCreated?: (id: string) => void;
   onFirstMessage?: (conversationId: string, content: string) => void;
   onToolCallUpdate?: (toolCall: ToolCall) => void;
@@ -19,13 +20,24 @@ interface AIChatProps {
 export default function AIChat({
   conversationId,
   initialMessages,
+  wasInProgress = false,
   onConversationCreated,
   onFirstMessage,
   onToolCallUpdate,
 }: AIChatProps) {
-  const { messages, isLoading, toolStatus, sendMessage, clearMessages, setMessages } =
-    useAIChat(conversationId || undefined, initialMessages);
+  const {
+    messages,
+    isLoading,
+    toolStatus,
+    connectionStatus,
+    activeConversationId,
+    sendMessage,
+    clearMessages,
+    setMessages,
+    retryLastMessage,
+  } = useAIChat(conversationId || undefined, initialMessages);
   const [inputValue, setInputValue] = useState("");
+  const [showInProgressBanner, setShowInProgressBanner] = useState(wasInProgress);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevConversationIdRef = useRef<string | null>(conversationId);
@@ -38,10 +50,17 @@ export default function AIChat({
     }
   }, [conversationId, initialMessages, setMessages]);
 
+  // Notify parent when the server creates/assigns a conversation ID
+  useEffect(() => {
+    if (activeConversationId && activeConversationId !== conversationId && onConversationCreated) {
+      onConversationCreated(activeConversationId);
+    }
+  }, [activeConversationId, conversationId, onConversationCreated]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, connectionStatus]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -90,6 +109,36 @@ export default function AIChat({
       onToolCallUpdate(lastKlipToolCall);
     }
   }, [messages, onToolCallUpdate, lastKlipToolCall]);
+
+  const showDisconnectBanner = connectionStatus === "disconnected" || connectionStatus === "error";
+
+  /** Continue an in-progress conversation that was interrupted by navigation */
+  const handleContinueInProgress = useCallback(() => {
+    setShowInProgressBanner(false);
+    // Find the last user message content
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUserMsg) {
+      const content = lastUserMsg.content;
+      // Remove the last user message (and any trailing empty assistant message)
+      // so that sendMessage can re-add it cleanly without duplication
+      setMessages((prev) => {
+        let trimmed = [...prev];
+        // Remove trailing empty assistant message if present
+        if (trimmed.length > 0 && trimmed[trimmed.length - 1].role === "assistant" && !trimmed[trimmed.length - 1].content) {
+          trimmed = trimmed.slice(0, -1);
+        }
+        // Remove the last user message
+        if (trimmed.length > 0 && trimmed[trimmed.length - 1].role === "user") {
+          trimmed = trimmed.slice(0, -1);
+        }
+        return trimmed;
+      });
+      // Small delay for state to settle, then re-send
+      setTimeout(() => {
+        sendMessage(content);
+      }, 150);
+    }
+  }, [messages, setMessages, sendMessage]);
 
   return (
     <div className="flex flex-1 flex-col rounded-[var(--radius-card)] bg-white shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
@@ -167,6 +216,38 @@ export default function AIChat({
                   </div>
                 </div>
               )}
+
+            {/* In-progress banner (conversation was interrupted by navigation) */}
+            {showInProgressBanner && !isLoading && (
+              <div className="flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
+                <span className="material-symbols-rounded text-blue-600 text-[20px]">
+                  info
+                </span>
+                <p className="text-sm text-blue-800 flex-1">
+                  Dit gesprek was nog bezig. Wil je doorgaan?
+                </p>
+                <Button variant="primary" size="sm" icon="refresh" onClick={handleContinueInProgress}>
+                  Doorgaan
+                </Button>
+              </div>
+            )}
+
+            {/* Disconnect / error banner */}
+            {showDisconnectBanner && (
+              <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+                <span className="material-symbols-rounded text-amber-600 text-[20px]">
+                  {connectionStatus === "error" ? "error" : "wifi_off"}
+                </span>
+                <p className="text-sm text-amber-800 flex-1">
+                  {connectionStatus === "error"
+                    ? "Er is een fout opgetreden. Je kunt het opnieuw proberen."
+                    : "De verbinding is verbroken."}
+                </p>
+                <Button variant="primary" size="sm" icon="refresh" onClick={retryLastMessage}>
+                  Doorgaan
+                </Button>
+              </div>
+            )}
 
             <div ref={messagesEndRef} />
           </div>

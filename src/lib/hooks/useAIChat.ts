@@ -22,9 +22,12 @@ export interface ToolStatus {
   phase?: "loading_context" | "streaming" | "tool_exec";
 }
 
+export type ConnectionStatus = "idle" | "connected" | "disconnected" | "error";
+
 interface StreamEvent {
   type: string;
   index?: number;
+  conversation_id?: string;
   content_block?: {
     type: string;
     text?: string;
@@ -54,11 +57,37 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
     executing: false,
     currentTool: null,
   });
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [activeConversationId, setActiveConversationId] = useState<string | undefined>(conversationId);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const lastUserMessageRef = useRef<string>("");
+  const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Clear the inactivity watchdog */
+  const clearActivityTimeout = useCallback(() => {
+    if (activityTimeoutRef.current) {
+      clearTimeout(activityTimeoutRef.current);
+      activityTimeoutRef.current = null;
+    }
+  }, []);
+
+  /** Reset the 45-second inactivity watchdog. If no meaningful data arrives, treat it as a disconnect. */
+  const resetActivityTimeout = useCallback(
+    (onTimeout: () => void) => {
+      clearActivityTimeout();
+      activityTimeoutRef.current = setTimeout(() => {
+        onTimeout();
+      }, 45_000);
+    },
+    [clearActivityTimeout]
+  );
 
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim() || isLoading) return;
+
+      // Remember the last user message so we can retry it
+      lastUserMessageRef.current = content.trim();
 
       const userMessage: ChatMessage = {
         id: generateId(),
@@ -68,6 +97,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
 
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
+      setConnectionStatus("idle");
       setToolStatus({ executing: true, currentTool: null, phase: "loading_context" });
 
       // Build the messages array for the API (all messages in conversation)
@@ -105,7 +135,10 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
         const response = await fetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: apiMessages, conversationId }),
+          body: JSON.stringify({
+            messages: apiMessages,
+            conversationId: activeConversationId,
+          }),
           signal: abortControllerRef.current.signal,
         });
 
@@ -117,6 +150,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
         }
 
         // Context is loaded, now streaming
+        setConnectionStatus("connected");
         setToolStatus({ executing: false, currentTool: null, phase: "streaming" });
 
         const reader = response.body?.getReader();
@@ -124,6 +158,20 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
 
         const decoder = new TextDecoder();
         let buffer = "";
+
+        // Handle stream timeout
+        const handleTimeout = () => {
+          // Abort the fetch but don't clear messages
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+          setConnectionStatus("disconnected");
+          setIsLoading(false);
+          setToolStatus({ executing: false, currentTool: null });
+        };
+
+        // Start the activity watchdog
+        resetActivityTimeout(handleTimeout);
 
         while (true) {
           const { done, value } = await reader.read();
@@ -148,12 +196,29 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
               const event: StreamEvent = JSON.parse(data);
 
               switch (event.type) {
+                case "conversation_init": {
+                  // Capture the conversation ID from the server
+                  if (event.conversation_id) {
+                    setActiveConversationId(event.conversation_id);
+                  }
+                  break;
+                }
+
+                case "keepalive": {
+                  // Keepalive resets the watchdog but is not "meaningful" data
+                  // We still reset it to prevent false timeouts during tool execution
+                  resetActivityTimeout(handleTimeout);
+                  break;
+                }
+
                 case "content_block_start": {
                   if (event.content_block?.type === "tool_use") {
                     currentToolCallId = event.content_block.id || "";
                     currentToolCallName = event.content_block.name || "";
                     currentToolCallInput = "";
                   }
+                  // Meaningful activity
+                  resetActivityTimeout(handleTimeout);
                   break;
                 }
 
@@ -167,11 +232,14 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                           : msg
                       )
                     );
+                    // Meaningful activity - text is streaming
+                    resetActivityTimeout(handleTimeout);
                   } else if (
                     event.delta?.type === "input_json_delta" &&
                     event.delta.partial_json
                   ) {
                     currentToolCallInput += event.delta.partial_json;
+                    resetActivityTimeout(handleTimeout);
                   }
                   break;
                 }
@@ -207,6 +275,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                     currentToolCallName = "";
                     currentToolCallInput = "";
                   }
+                  resetActivityTimeout(handleTimeout);
                   break;
                 }
 
@@ -216,6 +285,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                     executing: true,
                     currentTool: tools?.[0] ?? null,
                   });
+                  resetActivityTimeout(handleTimeout);
                   break;
                 }
 
@@ -225,6 +295,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                     executing: false,
                     currentTool: toolName,
                   });
+                  resetActivityTimeout(handleTimeout);
                   break;
                 }
 
@@ -248,6 +319,13 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                       )
                     );
                   }
+                  resetActivityTimeout(handleTimeout);
+                  break;
+                }
+
+                case "error": {
+                  // Server-side error - the stream is ending, show error status
+                  setConnectionStatus("error");
                   break;
                 }
               }
@@ -256,11 +334,23 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
             }
           }
         }
+
+        // Stream completed successfully
+        setConnectionStatus("idle");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
-          // User cancelled the request
+          // If we set disconnected status (from timeout), keep messages and that status.
+          // If user manually navigated away, also keep messages.
+          // Don't clear messages in either case.
+          if (connectionStatus !== "disconnected") {
+            // User navigated away or manually cancelled - keep messages, mark disconnected
+            setConnectionStatus("disconnected");
+          }
           return;
         }
+
+        // Network error or other fetch failure
+        setConnectionStatus("error");
 
         const errorContent =
           error instanceof Error
@@ -270,27 +360,59 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, content: errorContent }
+              ? { ...msg, content: msg.content || errorContent }
               : msg
           )
         );
       } finally {
+        clearActivityTimeout();
         setIsLoading(false);
         setToolStatus({ executing: false, currentTool: null });
         abortControllerRef.current = null;
       }
     },
-    [messages, isLoading, conversationId]
+    [messages, isLoading, activeConversationId, connectionStatus, resetActivityTimeout, clearActivityTimeout]
   );
+
+  /** Retry the last user message (re-sends to get the AI to continue) */
+  const retryLastMessage = useCallback(() => {
+    if (lastUserMessageRef.current) {
+      // Remove the last assistant message if it's empty or errored, so we get a clean retry
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.role === "assistant" && !last.content) {
+          return prev.slice(0, -1);
+        }
+        return prev;
+      });
+      setConnectionStatus("idle");
+      // Small delay to let state settle, then re-send
+      setTimeout(() => {
+        sendMessage(lastUserMessageRef.current);
+      }, 100);
+    }
+  }, [sendMessage]);
 
   const clearMessages = useCallback(() => {
     // Abort any in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+    clearActivityTimeout();
     setMessages([]);
     setIsLoading(false);
-  }, []);
+    setConnectionStatus("idle");
+  }, [clearActivityTimeout]);
 
-  return { messages, isLoading, toolStatus, sendMessage, clearMessages, setMessages };
+  return {
+    messages,
+    isLoading,
+    toolStatus,
+    connectionStatus,
+    activeConversationId,
+    sendMessage,
+    clearMessages,
+    setMessages,
+    retryLastMessage,
+  };
 }

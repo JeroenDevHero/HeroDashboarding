@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   getConversation,
   createConversation,
@@ -29,6 +29,30 @@ interface AIAssistantProps {
   initialConversationId?: string;
 }
 
+/**
+ * Detect whether a loaded conversation was still in progress.
+ * Checks for a _meta entry with status "in_progress", or as a fallback,
+ * if the last real message is from the user with no assistant reply.
+ */
+function isConversationInProgress(
+  messages: { role: string; content?: string; status?: string }[]
+): boolean {
+  // Check _meta entries (server writes these)
+  const meta = messages.filter((m) => m.role === "_meta");
+  if (meta.length > 0) {
+    const lastMeta = meta[meta.length - 1];
+    return lastMeta.status === "in_progress";
+  }
+  // Fallback: if the last real message is from the user (AI never responded)
+  const realMessages = messages.filter(
+    (m) => m.role === "user" || m.role === "assistant"
+  );
+  if (realMessages.length > 0) {
+    return realMessages[realMessages.length - 1].role === "user";
+  }
+  return false;
+}
+
 export default function AIAssistant({
   initialConversations,
   initialConversationId,
@@ -50,6 +74,7 @@ export default function AIAssistant({
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [previewToolCall, setPreviewToolCall] = useState<ToolCall | null>(null);
+  const [wasInProgress, setWasInProgress] = useState(false);
 
   // Load messages for the initially selected conversation
   useEffect(() => {
@@ -62,12 +87,24 @@ export default function AIAssistant({
 
   const loadConversationMessages = useCallback(async (id: string) => {
     setIsLoadingMessages(true);
+    setWasInProgress(false);
     try {
       const conversation = await getConversation(id);
       if (conversation?.messages) {
+        // Check if conversation was in progress before mapping
+        const inProgress = isConversationInProgress(
+          conversation.messages as { role: string; content?: string; status?: string }[]
+        );
+        setWasInProgress(inProgress);
+
+        // Filter out _meta entries before mapping to ChatMessage format
+        const realMessages = (
+          conversation.messages as { id?: string; role: string; content: string; tool_calls?: unknown[] }[]
+        ).filter((m) => m.role !== "_meta");
+
         // Map persisted messages to ChatMessage format
-        const mapped: ChatMessage[] = conversation.messages.map(
-          (m: { id?: string; role: string; content: string; tool_calls?: unknown[] }) => ({
+        const mapped: ChatMessage[] = realMessages.map(
+          (m) => ({
             id: m.id || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
             role: m.role as "user" | "assistant",
             content: m.content || "",
@@ -126,6 +163,7 @@ export default function AIAssistant({
       setActiveConversationId(newConv.id);
       setActiveMessages([]);
       setPreviewToolCall(null);
+      setWasInProgress(false);
     } catch (error) {
       console.error("Fout bij aanmaken gesprek:", error);
     }
@@ -147,6 +185,7 @@ export default function AIAssistant({
             setActiveConversationId(null);
             setActiveMessages([]);
             setPreviewToolCall(null);
+            setWasInProgress(false);
           }
         }
       } catch (error) {
@@ -174,6 +213,33 @@ export default function AIAssistant({
       }
     },
     []
+  );
+
+  /** When the server creates a conversation ID (for a chat that started without one) */
+  const handleConversationCreated = useCallback(
+    (id: string) => {
+      if (id !== activeConversationId) {
+        setActiveConversationId(id);
+        // Add to sidebar if not already there
+        setConversations((prev) => {
+          if (prev.some((c) => c.id === id)) return prev;
+          return [
+            {
+              id,
+              user_id: "",
+              title: "Nieuw gesprek",
+              context_type: "klip_builder",
+              context_id: null,
+              created_klip_ids: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            ...prev,
+          ];
+        });
+      }
+    },
+    [activeConversationId]
   );
 
   return (
@@ -214,6 +280,8 @@ export default function AIAssistant({
             key={activeConversationId || "empty"}
             conversationId={activeConversationId}
             initialMessages={activeMessages}
+            wasInProgress={wasInProgress}
+            onConversationCreated={handleConversationCreated}
             onFirstMessage={handleFirstMessage}
             onToolCallUpdate={(tc) => setPreviewToolCall(tc)}
           />
