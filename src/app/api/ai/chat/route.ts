@@ -58,7 +58,7 @@ async function saveConversationProgress(
     .eq("user_id", userId);
 }
 
-const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
+const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent, aangedreven door Claude Opus 4.6 (het nieuwste en krachtigste AI-model van Anthropic). Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
 
 STRENGE REGELS:
 - Gebruik UITSLUITEND data uit de gekoppelde databronnen. Verzin NOOIT data, feiten, of voorbeelden.
