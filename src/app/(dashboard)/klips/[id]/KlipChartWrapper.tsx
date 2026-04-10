@@ -19,10 +19,12 @@ interface KlipChartWrapperProps {
 
 export default function KlipChartWrapper({ type, data, config }: KlipChartWrapperProps) {
   return (
-    <KlipChart
-      type={type as Parameters<typeof KlipChart>[0]["type"]}
-      data={data}
-      config={config}
-    />
+    <div style={{ width: "100%", height: 320 }}>
+      <KlipChart
+        type={type as Parameters<typeof KlipChart>[0]["type"]}
+        data={data}
+        config={config}
+      />
+    </div>
   );
 }
