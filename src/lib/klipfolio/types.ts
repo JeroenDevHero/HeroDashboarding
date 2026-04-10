@@ -60,6 +60,10 @@ export interface KlipfolioKlipDetail extends KlipfolioKlip {
   properties?: Record<string, unknown>;
   formula?: string;
   active?: boolean;
+  row?: number;
+  col?: number;
+  size_x?: number;
+  size_y?: number;
 }
 
 export interface KlipfolioKlipDatasource {

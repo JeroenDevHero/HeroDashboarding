@@ -1,6 +1,10 @@
 import {
   getKlipfolioTab,
-  getKlipfolioKlips,
+  getKlipfolioTabKlips,
+  getAllKlipfolioKlips,
+  getAllKlipfolioDatasources,
+  getKlipfolioKlipDetails,
+  getKlipfolioDatasourceDetails,
   isKlipfolioConfigured,
 } from "@/lib/klipfolio/client";
 import Card from "@/components/ui/Card";
@@ -34,10 +38,24 @@ export default async function RebuildPage({
   }
 
   try {
-    const [tab, klipsResult] = await Promise.all([
+    // Fetch tab details and all klips in parallel
+    const [tab, tabKlips, allKlipsResult, allDatasources] = await Promise.all([
       getKlipfolioTab(tabId),
-      getKlipfolioKlips(800),
+      getKlipfolioTabKlips(tabId),
+      getAllKlipfolioKlips(),
+      getAllKlipfolioDatasources(),
     ]);
+
+    // Get detailed info for all klips (component types, datasource bindings)
+    const klipIds = allKlipsResult.map((k) => k.id);
+    const klipDetails = await getKlipfolioKlipDetails(klipIds);
+
+    // Get detailed datasource info
+    const dsIds = allDatasources.map((d) => d.id);
+    const dsDetails = await getKlipfolioDatasourceDetails(dsIds);
+
+    // IDs of klips actually on this tab
+    const tabKlipIds = new Set(tabKlips.map((tk) => tk.id));
 
     return (
       <div>
@@ -55,7 +73,9 @@ export default async function RebuildPage({
           tabId={tabId}
           tabName={tab.name}
           tabDescription={tab.description || ""}
-          klips={klipsResult.klips}
+          klips={klipDetails}
+          tabKlipIds={Array.from(tabKlipIds)}
+          datasources={dsDetails}
         />
       </div>
     );

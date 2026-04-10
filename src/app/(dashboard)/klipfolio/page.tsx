@@ -1,7 +1,9 @@
 import {
-  getKlipfolioTabs,
-  getKlipfolioKlips,
-  getKlipfolioDatasources,
+  getAllKlipfolioTabs,
+  getAllKlipfolioKlips,
+  getAllKlipfolioDatasources,
+  getKlipfolioKlipDetails,
+  getKlipfolioDatasourceDetails,
   isKlipfolioConfigured,
 } from "@/lib/klipfolio/client";
 import Card from "@/components/ui/Card";
@@ -29,10 +31,17 @@ export default async function KlipfolioPage() {
   }
 
   try {
-    const [tabsResult, klipsResult, datasourcesResult] = await Promise.all([
-      getKlipfolioTabs(100),
-      getKlipfolioKlips(100),
-      getKlipfolioDatasources(100),
+    // Fetch all basic lists
+    const [allTabs, allKlips, allDatasources] = await Promise.all([
+      getAllKlipfolioTabs(),
+      getAllKlipfolioKlips(),
+      getAllKlipfolioDatasources(),
+    ]);
+
+    // Fetch deep details for klips and datasources
+    const [klipDetails, dsDetails] = await Promise.all([
+      getKlipfolioKlipDetails(allKlips.map((k) => k.id)),
+      getKlipfolioDatasourceDetails(allDatasources.map((d) => d.id)),
     ]);
 
     return (
@@ -42,18 +51,18 @@ export default async function KlipfolioPage() {
             Klipfolio
           </h1>
           <p className="mt-1 text-sm text-hero-grey-regular">
-            Referentie-overzicht van je huidige Klipfolio omgeving. Gebruik dit
-            als inspiratie bij het maken van nieuwe dashboards.
+            Volledig overzicht van je Klipfolio omgeving met visualisatietypen
+            en databronnen.
           </p>
         </div>
 
         <KlipfolioOverview
-          tabs={tabsResult.tabs}
-          tabsTotal={tabsResult.total}
-          klips={klipsResult.klips}
-          klipsTotal={klipsResult.total}
-          datasources={datasourcesResult.datasources}
-          datasourcesTotal={datasourcesResult.total}
+          tabs={allTabs}
+          tabsTotal={allTabs.length}
+          klips={klipDetails}
+          klipsTotal={allKlips.length}
+          datasources={dsDetails}
+          datasourcesTotal={allDatasources.length}
         />
       </div>
     );

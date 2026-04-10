@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   getKlipfolioTabs,
+  getKlipfolioTab,
+  getKlipfolioTabKlips,
   getKlipfolioKlips,
+  getKlipfolioKlip,
   getKlipfolioDatasources,
+  getKlipfolioDatasource,
   isKlipfolioConfigured,
 } from "@/lib/klipfolio/client";
 
@@ -32,26 +36,46 @@ export async function GET(request: Request) {
     // 3. Parse query params
     const { searchParams } = new URL(request.url);
     const resource = searchParams.get("resource");
+    const id = searchParams.get("id");
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // 4. Proxy to Klipfolio
+    // 4. Route to appropriate handler
     switch (resource) {
       case "tabs": {
+        if (id) {
+          const tab = await getKlipfolioTab(id);
+          return NextResponse.json({ tab });
+        }
         const result = await getKlipfolioTabs(limit, offset);
         return NextResponse.json(result);
       }
+      case "tab-klips": {
+        if (!id) {
+          return NextResponse.json({ error: "Tab ID is vereist" }, { status: 400 });
+        }
+        const klips = await getKlipfolioTabKlips(id);
+        return NextResponse.json({ klips, total: klips.length });
+      }
       case "klips": {
+        if (id) {
+          const klip = await getKlipfolioKlip(id);
+          return NextResponse.json({ klip });
+        }
         const result = await getKlipfolioKlips(limit, offset);
         return NextResponse.json(result);
       }
       case "datasources": {
+        if (id) {
+          const datasource = await getKlipfolioDatasource(id);
+          return NextResponse.json({ datasource });
+        }
         const result = await getKlipfolioDatasources(limit, offset);
         return NextResponse.json(result);
       }
       default:
         return NextResponse.json(
-          { error: "Ongeldig resource type. Gebruik: tabs, klips, of datasources" },
+          { error: "Ongeldig resource type. Gebruik: tabs, tab-klips, klips, of datasources" },
           { status: 400 }
         );
     }

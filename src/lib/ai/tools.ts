@@ -6,6 +6,7 @@ import {
 import { getCatalogSummary } from "@/lib/datasources/catalog";
 import { getDataIntelligence } from "@/lib/datasources/intelligence";
 import { getKnowledgeContext } from "@/lib/actions/knowledge";
+import { generateVisualKnowledgeText } from "@/lib/klipfolio/visual-knowledge";
 
 /** Valid klip_type enum values matching the Postgres enum */
 export type KlipType =
@@ -211,6 +212,10 @@ export async function executeSaveKnowledge(
   }
 
   return data;
+}
+
+export async function executeGetVisualKnowledge(): Promise<string> {
+  return generateVisualKnowledgeText();
 }
 
 export async function executeListDatasources(userId: string) {
