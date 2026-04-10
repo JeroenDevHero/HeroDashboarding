@@ -189,6 +189,25 @@ const TOOLS: Anthropic.Messages.Tool[] = [
   },
 ];
 
+/**
+ * Summarize a tool result for conversation persistence so Claude retains
+ * context about what tools were previously called and what they returned.
+ */
+function summarizeToolResult(toolName: string, result: unknown): string {
+  if (!result || typeof result !== "object") return "voltooid";
+  const r = result as Record<string, unknown>;
+  switch (toolName) {
+    case "list_datasources":
+      return `${Array.isArray(r) ? r.length : "?"} databronnen gevonden`;
+    case "preview_data":
+      return `${r.row_count || "?"} rijen opgehaald`;
+    case "create_klip":
+      return `klip "${r.name || "?"}" aangemaakt`;
+    default:
+      return "voltooid";
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Authenticate via Supabase
@@ -235,7 +254,7 @@ export async function POST(request: Request) {
 
     // Start streaming response from Claude
     const stream = await anthropic.messages.stream({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-opus-4-20250514",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       tools: TOOLS,
@@ -248,6 +267,15 @@ export async function POST(request: Request) {
 
     const readable = new ReadableStream({
       async start(controller) {
+        // Send keepalive pings every 5 seconds to prevent proxy/connection timeout
+        const keepalive = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(": keepalive\n\n"));
+          } catch {
+            clearInterval(keepalive);
+          }
+        }, 5000);
+
         const createdKlipIds: string[] = [];
         let lastPreviewResult: unknown = null; // Track preview data across tool rounds
         const allMessages = [...messages]; // Track messages for persistence
@@ -372,6 +400,34 @@ export async function POST(request: Request) {
               });
             }
 
+            // Build a comprehensive assistant message that includes tool context for persistence
+            let assistantText = "";
+            for (const block of finalMessage.content) {
+              if (block.type === "text") assistantText += block.text;
+            }
+
+            const toolSummaries = toolResults
+              .map((tr, i) => {
+                const toolName = toolUseBlocks[i].name;
+                let resultObj: unknown;
+                try {
+                  resultObj = JSON.parse(tr.content as string);
+                } catch {
+                  resultObj = null;
+                }
+                const summary = summarizeToolResult(toolName, resultObj);
+                return `[Tool: ${toolName} - ${summary}]`;
+              })
+              .join("\n");
+
+            if (toolSummaries) {
+              assistantText += (assistantText ? "\n\n" : "") + toolSummaries;
+            }
+
+            if (assistantText) {
+              allMessages.push({ role: "assistant", content: assistantText });
+            }
+
             // Continue conversation with tool results
             currentMessages = [
               ...currentMessages,
@@ -380,7 +436,7 @@ export async function POST(request: Request) {
             ];
 
             currentStream = await anthropic.messages.stream({
-              model: "claude-sonnet-4-20250514",
+              model: "claude-opus-4-20250514",
               max_tokens: 4096,
               system: SYSTEM_PROMPT,
               tools: TOOLS,
@@ -410,6 +466,8 @@ export async function POST(request: Request) {
           );
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
+        } finally {
+          clearInterval(keepalive);
         }
       },
     });

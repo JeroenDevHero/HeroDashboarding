@@ -128,7 +128,8 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
 
           for (const line of lines) {
             const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data: ")) continue;
+            // Skip empty lines, SSE comments (keepalive pings), and non-data lines
+            if (!trimmed || trimmed.startsWith(":") || !trimmed.startsWith("data: ")) continue;
 
             const data = trimmed.slice(6);
             if (data === "[DONE]") continue;
