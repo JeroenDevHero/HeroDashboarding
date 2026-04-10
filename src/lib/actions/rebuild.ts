@@ -86,3 +86,67 @@ Instructies:
     conversationId: conversation.id,
   };
 }
+
+export async function startKlipRebuild(data: {
+  klipfolioKlipName: string;
+  newKlipName: string;
+  vizType: string;
+  vizLabel: string;
+  datasourceCount: number;
+  userContext?: string;
+}): Promise<{ conversationId: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const contextSection = data.userContext?.trim()
+    ? `\nExtra context van de gebruiker:\n${data.userContext.trim()}`
+    : '';
+
+  const rebuildPrompt = `Herbouw de Klipfolio klip "${data.klipfolioKlipName}" als nieuwe Hero klip "${data.newKlipName}".
+
+Klipfolio klip details:
+- Naam: ${data.klipfolioKlipName}
+- Visualisatietype: ${data.vizLabel} (${data.vizType})
+- Aantal databronnen: ${data.datasourceCount}
+${contextSection}
+
+Instructies:
+1. Haal eerst de data catalog op om de juiste tabellen/data te vinden
+2. Gebruik preview_data om de data te verkennen
+3. Kies het beste Hero klip-type op basis van het oorspronkelijke Klipfolio type (${data.vizType})
+4. Maak de klip aan met create_klip
+5. Gebruik nette Nederlandse namen en het Hero kleurenschema (#073889 blauw, #F46015 oranje)
+6. Controleer of de data klopt voordat je de klip aanmaakt`;
+
+  const { data: conversation, error: convError } = await supabase
+    .from('ai_conversations')
+    .insert({
+      user_id: user.id,
+      title: `Herbouw klip: ${data.klipfolioKlipName}`,
+      context_type: 'klip_builder',
+      messages: [
+        {
+          id: crypto.randomUUID(),
+          role: 'user',
+          content: rebuildPrompt,
+          tool_calls: null,
+          created_at: new Date().toISOString(),
+        },
+      ],
+    })
+    .select()
+    .single();
+
+  if (convError || !conversation) {
+    throw new Error(convError?.message || 'Kon AI gesprek niet aanmaken');
+  }
+
+  revalidatePath('/ai');
+
+  return {
+    conversationId: conversation.id,
+  };
+}

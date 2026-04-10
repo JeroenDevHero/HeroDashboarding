@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import EmptyState from "@/components/ui/EmptyState";
+import { refreshKlipfolioCache } from "@/lib/actions/klipfolio";
 import type {
   KlipfolioTab,
   KlipfolioKlip,
@@ -55,14 +56,23 @@ export default function KlipfolioOverview({
   datasources,
   datasourcesTotal,
 }: Props) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("dashboards");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isRefreshing, startRefresh] = useTransition();
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     setSearch("");
     setVisibleCount(PAGE_SIZE);
+  };
+
+  const handleRefresh = () => {
+    startRefresh(async () => {
+      await refreshKlipfolioCache();
+      router.refresh();
+    });
   };
 
   const tabConfig: { key: TabKey; label: string; icon: string; count: number }[] = [
@@ -112,11 +122,22 @@ export default function KlipfolioOverview({
 
   return (
     <div className="space-y-4">
-      {/* Stats bar */}
-      <div className="flex flex-wrap gap-3">
-        <Badge variant="info">{tabsTotal} dashboards</Badge>
-        <Badge variant="info">{klipsTotal} klips</Badge>
-        <Badge variant="info">{datasourcesTotal} databronnen</Badge>
+      {/* Stats bar + refresh button */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-3">
+          <Badge variant="info">{tabsTotal} dashboards</Badge>
+          <Badge variant="info">{klipsTotal} klips</Badge>
+          <Badge variant="info">{datasourcesTotal} databronnen</Badge>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="refresh"
+          onClick={handleRefresh}
+          loading={isRefreshing}
+        >
+          {isRefreshing ? "Vernieuwen..." : "Vernieuwen"}
+        </Button>
       </div>
 
       {/* Tab switcher */}
@@ -208,7 +229,7 @@ function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
               <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs">
                 Beschrijving
               </th>
-              <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs w-32">
+              <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs w-48">
                 Acties
               </th>
             </tr>
@@ -226,16 +247,18 @@ function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
                   {tab.description || "-"}
                 </td>
                 <td className="px-5 py-3">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon="auto_awesome"
-                    onClick={() =>
-                      router.push(`/klipfolio/rebuild/${tab.id}`)
-                    }
-                  >
-                    Herbouwen
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon="auto_awesome"
+                      onClick={() =>
+                        router.push(`/klipfolio/rebuild/${tab.id}`)
+                      }
+                    >
+                      Herbouwen
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -247,6 +270,8 @@ function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
 }
 
 function KlipsTable({ klips }: { klips: KlipfolioKlip[] }) {
+  const router = useRouter();
+
   if (klips.length === 0) {
     return (
       <Card>
@@ -277,6 +302,9 @@ function KlipsTable({ klips }: { klips: KlipfolioKlip[] }) {
               <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs">
                 Laatst bijgewerkt
               </th>
+              <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs w-36">
+                Acties
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -296,6 +324,18 @@ function KlipsTable({ klips }: { klips: KlipfolioKlip[] }) {
                 </td>
                 <td className="px-5 py-3 text-hero-grey-regular whitespace-nowrap">
                   {formatDate(klip.last_updated)}
+                </td>
+                <td className="px-5 py-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="auto_awesome"
+                    onClick={() =>
+                      router.push(`/klipfolio/rebuild-klip/${klip.id}`)
+                    }
+                  >
+                    Herbouwen
+                  </Button>
                 </td>
               </tr>
             ))}

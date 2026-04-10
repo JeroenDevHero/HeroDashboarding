@@ -49,7 +49,10 @@ function getHeaders(): Record<string, string> {
   };
 }
 
-async function klipfolioFetch<T>(path: string, revalidate = 300): Promise<T> {
+/** Default revalidate: 24 hours — Klipfolio data is mostly static */
+const DEFAULT_REVALIDATE = 86400;
+
+async function klipfolioFetch<T>(path: string, revalidate = DEFAULT_REVALIDATE): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: getHeaders(),
     next: { revalidate },
