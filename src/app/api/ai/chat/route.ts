@@ -343,7 +343,7 @@ export async function POST(request: Request) {
     // Start streaming response from Claude
     const stream = await anthropic.messages.stream({
       model: "claude-opus-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 16384,
       system: SYSTEM_PROMPT,
       tools: TOOLS,
       messages: anthropicMessages,
@@ -481,6 +481,7 @@ export async function POST(request: Request) {
                     isError = true;
                 }
               } catch (error) {
+                console.error(`Tool ${toolBlock.name} failed:`, error instanceof Error ? error.message : error);
                 result = {
                   error:
                     error instanceof Error
@@ -559,7 +560,7 @@ export async function POST(request: Request) {
 
             currentStream = await anthropic.messages.stream({
               model: "claude-opus-4-20250514",
-              max_tokens: 4096,
+              max_tokens: 16384,
               system: SYSTEM_PROMPT,
               tools: TOOLS,
               messages: currentMessages,
