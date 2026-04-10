@@ -7,30 +7,19 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Badge from "@/components/ui/Badge";
 import { startDashboardRebuild } from "@/lib/actions/rebuild";
-import {
-  KLIPFOLIO_COMPONENT_TYPES,
-  KLIPFOLIO_CONNECTOR_TYPES,
-  KLIPFOLIO_TO_HERO_TYPE,
-} from "@/lib/klipfolio/types";
-import type {
-  KlipfolioKlipDetail,
-  KlipfolioDatasourceDetail,
-} from "@/lib/klipfolio/types";
+import type { KlipfolioKlip } from "@/lib/klipfolio/types";
 
 interface RebuildWizardProps {
   tabId: string;
   tabName: string;
   tabDescription: string;
-  klips: KlipfolioKlipDetail[];
+  klips: KlipfolioKlip[];
   tabKlipIds: string[];
-  datasources: KlipfolioDatasourceDetail[];
 }
 
 type Step = "review" | "starting";
 
-/** Score how relevant a klip is to a tab name */
 function scoreRelevance(klipName: string, tabName: string, isOnTab: boolean): number {
-  // Klips that are actually on this tab get max score
   if (isOnTab) return 100;
 
   const normalize = (s: string) =>
@@ -51,44 +40,12 @@ function scoreRelevance(klipName: string, tabName: string, isOnTab: boolean): nu
   return Math.round((matchedWords / tabWords.length) * 70);
 }
 
-function getComponentIcon(componentType: string): string {
-  const iconMap: Record<string, string> = {
-    "bar-chart": "bar_chart",
-    "column-chart": "bar_chart",
-    "line-chart": "show_chart",
-    "area-chart": "area_chart",
-    "pie-chart": "pie_chart",
-    "donut-chart": "donut_large",
-    "scatter-chart": "scatter_plot",
-    "combo-chart": "stacked_line_chart",
-    "funnel-chart": "filter_alt",
-    "gauge": "speed",
-    "number-block": "pin",
-    "sparkline": "trending_up",
-    "table": "table_chart",
-    "pivot-table": "pivot_table_chart",
-    "map": "map",
-    "geo-map": "public",
-    "heatmap": "grid_on",
-    "treemap": "dashboard",
-    "text-block": "text_fields",
-    "html-block": "code",
-    "image": "image",
-    "progress-bar": "linear_scale",
-    "bullet-chart": "horizontal_rule",
-    "waterfall-chart": "waterfall_chart",
-    "leaderboard": "leaderboard",
-  };
-  return iconMap[componentType] || "bar_chart";
-}
-
 export default function RebuildWizard({
   tabId,
   tabName,
   tabDescription,
   klips,
   tabKlipIds,
-  datasources,
 }: RebuildWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("review");
@@ -100,14 +57,6 @@ export default function RebuildWizard({
 
   const tabKlipSet = useMemo(() => new Set(tabKlipIds), [tabKlipIds]);
 
-  // Build datasource lookup
-  const dsMap = useMemo(() => {
-    const map = new Map<string, KlipfolioDatasourceDetail>();
-    for (const ds of datasources) map.set(ds.id, ds);
-    return map;
-  }, [datasources]);
-
-  // Score and sort klips
   const scoredKlips = useMemo(
     () =>
       klips
@@ -124,7 +73,6 @@ export default function RebuildWizard({
   const relevantKlips = scoredKlips.filter((k) => !k.isOnTab && k.score > 0);
   const otherKlips = scoredKlips.filter((k) => !k.isOnTab && k.score === 0);
 
-  // Pre-select tab klips + relevant klips
   const [selectedKlips, setSelectedKlips] = useState<Set<string>>(
     new Set([
       ...tabDirectKlips.map((k) => k.id),
@@ -168,31 +116,6 @@ export default function RebuildWizard({
 
   const selectNone = () => setSelectedKlips(new Set());
 
-  // Build rich rebuild context
-  const buildRebuildContext = () => {
-    const selectedDetails = klips.filter((k) => selectedKlips.has(k.id));
-    const lines: string[] = [];
-
-    for (const klip of selectedDetails) {
-      const typeLabel = KLIPFOLIO_COMPONENT_TYPES[klip.component_type || ""] || klip.component_type || "onbekend";
-      const heroType = KLIPFOLIO_TO_HERO_TYPE[klip.component_type || ""] || "custom_component";
-      lines.push(`- ${klip.name} (${typeLabel} → Hero: ${heroType})`);
-
-      if (klip.datasources && klip.datasources.length > 0) {
-        for (const dsRef of klip.datasources) {
-          const dsId = dsRef.datasource_id || dsRef.id;
-          const ds = dsMap.get(dsId);
-          if (ds) {
-            const connLabel = KLIPFOLIO_CONNECTOR_TYPES[ds.connector || ""] || ds.connector || "onbekend";
-            lines.push(`  Databron: ${ds.name} (${connLabel})`);
-          }
-        }
-      }
-    }
-
-    return lines.join("\n");
-  };
-
   const handleStartRebuild = async () => {
     if (selectedKlips.size === 0) {
       setError("Selecteer minimaal een klip om te herbouwen.");
@@ -209,18 +132,12 @@ export default function RebuildWizard({
 
     try {
       const selectedDetails = klips.filter((k) => selectedKlips.has(k.id));
-      const klipContext = buildRebuildContext();
 
       const result = await startDashboardRebuild({
         klipfolioTabName: tabName,
         newDashboardName: dashboardName.trim(),
         klipNames: selectedDetails.map((k) => k.name),
-        userContext: [
-          klipContext,
-          userContext.trim() ? `\nExtra instructies: ${userContext.trim()}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n"),
+        userContext: userContext.trim() || undefined,
       });
 
       router.push(`/ai?conversation=${result.conversationId}`);
@@ -249,13 +166,6 @@ export default function RebuildWizard({
         </div>
       </Card>
     );
-  }
-
-  // Count component types in selection
-  const selectedComponentTypes: Record<string, number> = {};
-  for (const klip of klips.filter((k) => selectedKlips.has(k.id))) {
-    const ct = klip.component_type || "onbekend";
-    selectedComponentTypes[ct] = (selectedComponentTypes[ct] || 0) + 1;
   }
 
   return (
@@ -298,29 +208,6 @@ export default function RebuildWizard({
         </div>
       </Card>
 
-      {/* Selection summary */}
-      {selectedKlips.size > 0 && (
-        <Card>
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-hero-grey-black">
-              Selectie-overzicht
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(selectedComponentTypes)
-                .sort((a, b) => b[1] - a[1])
-                .map(([type, count]) => (
-                  <Badge key={type} variant="info">
-                    <span className="material-symbols-rounded text-[12px] mr-1">
-                      {getComponentIcon(type)}
-                    </span>
-                    {KLIPFOLIO_COMPONENT_TYPES[type] || type}: {count}x
-                  </Badge>
-                ))}
-            </div>
-          </div>
-        </Card>
-      )}
-
       {/* Klip selection */}
       <Card>
         <div className="space-y-4">
@@ -330,8 +217,8 @@ export default function RebuildWizard({
                 Klips selecteren
               </h2>
               <p className="mt-0.5 text-xs text-hero-grey-regular">
-                Selecteer welke visualisaties je wilt herbouwen. De AI gebruikt
-                de visuele types en databronnen als context.
+                Selecteer welke visualisaties je wilt herbouwen. De AI zal
+                proberen deze te recreeren met beschikbare databronnen.
               </p>
             </div>
             <Badge variant="info">
@@ -339,7 +226,6 @@ export default function RebuildWizard({
             </Badge>
           </div>
 
-          {/* Search and bulk actions */}
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <Input
@@ -360,9 +246,7 @@ export default function RebuildWizard({
           {filteredTabDirect.length > 0 && (
             <div>
               <h3 className="mb-2 text-xs font-semibold text-green-600 uppercase tracking-wide flex items-center gap-1">
-                <span className="material-symbols-rounded text-[14px]">
-                  check_circle
-                </span>
+                <span className="material-symbols-rounded text-[14px]">check_circle</span>
                 Op dit dashboard ({filteredTabDirect.length})
               </h3>
               <div className="max-h-72 overflow-auto rounded-lg border border-green-200">
@@ -372,7 +256,6 @@ export default function RebuildWizard({
                     klip={klip}
                     selected={selectedKlips.has(klip.id)}
                     onToggle={() => toggleKlip(klip.id)}
-                    dsMap={dsMap}
                   />
                 ))}
               </div>
@@ -383,9 +266,7 @@ export default function RebuildWizard({
           {filteredRelevant.length > 0 && (
             <div>
               <h3 className="mb-2 text-xs font-semibold text-hero-blue uppercase tracking-wide flex items-center gap-1">
-                <span className="material-symbols-rounded text-[14px]">
-                  stars
-                </span>
+                <span className="material-symbols-rounded text-[14px]">stars</span>
                 Gerelateerd aan &ldquo;{tabName}&rdquo; ({filteredRelevant.length})
               </h3>
               <div className="max-h-60 overflow-auto rounded-lg border border-hero-blue-soft">
@@ -395,7 +276,6 @@ export default function RebuildWizard({
                     klip={klip}
                     selected={selectedKlips.has(klip.id)}
                     onToggle={() => toggleKlip(klip.id)}
-                    dsMap={dsMap}
                   />
                 ))}
               </div>
@@ -406,9 +286,7 @@ export default function RebuildWizard({
           {filteredOther.length > 0 && (
             <details className="group">
               <summary className="mb-2 text-xs font-semibold text-hero-grey-regular uppercase tracking-wide cursor-pointer flex items-center gap-1">
-                <span className="material-symbols-rounded text-[14px] transition-transform group-open:rotate-90">
-                  chevron_right
-                </span>
+                <span className="material-symbols-rounded text-[14px] transition-transform group-open:rotate-90">chevron_right</span>
                 Overige klips ({filteredOther.length})
               </summary>
               <div className="max-h-48 overflow-auto rounded-lg border border-hero-grey-light">
@@ -418,7 +296,6 @@ export default function RebuildWizard({
                     klip={klip}
                     selected={selectedKlips.has(klip.id)}
                     onToggle={() => toggleKlip(klip.id)}
-                    dsMap={dsMap}
                   />
                 ))}
               </div>
@@ -471,84 +348,35 @@ function KlipRow({
   klip,
   selected,
   onToggle,
-  dsMap,
 }: {
-  klip: KlipfolioKlipDetail & { score?: number; isOnTab?: boolean };
+  klip: KlipfolioKlip & { score?: number; isOnTab?: boolean };
   selected: boolean;
   onToggle: () => void;
-  dsMap: Map<string, KlipfolioDatasourceDetail>;
 }) {
-  const componentType = klip.component_type || "onbekend";
-  const typeLabel = KLIPFOLIO_COMPONENT_TYPES[componentType] || componentType;
-  const heroType = KLIPFOLIO_TO_HERO_TYPE[componentType] || "custom";
-  const icon = getComponentIcon(componentType);
-
-  const dsNames: string[] = [];
-  if (klip.datasources) {
-    for (const dsRef of klip.datasources) {
-      const dsId = dsRef.datasource_id || dsRef.id;
-      const ds = dsMap.get(dsId);
-      if (ds) {
-        const connLabel = KLIPFOLIO_CONNECTOR_TYPES[ds.connector || ""] || ds.connector || "";
-        dsNames.push(`${ds.name} (${connLabel})`);
-      } else {
-        dsNames.push(dsRef.name || dsId);
-      }
-    }
-  }
-
   return (
     <label
-      className={`flex cursor-pointer items-start gap-3 border-b border-hero-grey-light/50 px-4 py-3 transition-colors last:border-0 ${
-        selected
-          ? "bg-hero-blue-hairline/50"
-          : "hover:bg-hero-blue-hairline/30"
+      className={`flex cursor-pointer items-center gap-3 border-b border-hero-grey-light/50 px-4 py-2.5 transition-colors last:border-0 ${
+        selected ? "bg-hero-blue-hairline/50" : "hover:bg-hero-blue-hairline/30"
       }`}
     >
       <input
         type="checkbox"
         checked={selected}
         onChange={onToggle}
-        className="mt-0.5 h-4 w-4 rounded border-hero-grey-light text-hero-blue focus:ring-hero-blue-medium/30"
+        className="h-4 w-4 rounded border-hero-grey-light text-hero-blue focus:ring-hero-blue-medium/30"
       />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-rounded text-[16px] text-hero-grey-regular">
-            {icon}
-          </span>
-          <p className="text-sm font-medium text-hero-grey-black truncate">
-            {klip.name}
-          </p>
-          <span className="shrink-0 rounded bg-hero-grey-light/60 px-1.5 py-0.5 text-[10px] text-hero-grey-regular">
-            {typeLabel}
-          </span>
-          <span className="shrink-0 rounded bg-hero-blue-hairline px-1.5 py-0.5 text-[10px] text-hero-blue">
-            → {heroType}
-          </span>
-        </div>
+        <p className="text-sm font-medium text-hero-grey-black truncate">
+          {klip.name}
+        </p>
         {klip.description && (
-          <p className="mt-0.5 text-xs text-hero-grey-regular truncate pl-6">
+          <p className="text-xs text-hero-grey-regular truncate">
             {klip.description}
           </p>
         )}
-        {dsNames.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1 pl-6">
-            {dsNames.map((name, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-0.5 rounded-full bg-hero-grey-light/40 px-2 py-0.5 text-[10px] text-hero-grey-regular"
-              >
-                <span className="material-symbols-rounded text-[10px]">
-                  database
-                </span>
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       {klip.score !== undefined && klip.score > 0 && !klip.isOnTab && (
-        <span className="text-[10px] text-hero-blue-medium shrink-0 mt-0.5">
+        <span className="text-[10px] text-hero-blue-medium shrink-0">
           {klip.score}%
         </span>
       )}

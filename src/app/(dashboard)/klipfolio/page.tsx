@@ -2,8 +2,6 @@ import {
   getAllKlipfolioTabs,
   getAllKlipfolioKlips,
   getAllKlipfolioDatasources,
-  getKlipfolioKlipDetails,
-  getKlipfolioDatasourceDetails,
   isKlipfolioConfigured,
 } from "@/lib/klipfolio/client";
 import Card from "@/components/ui/Card";
@@ -31,17 +29,11 @@ export default async function KlipfolioPage() {
   }
 
   try {
-    // Fetch all basic lists
+    // Fetch basic lists only — deep details are too many API calls for page load
     const [allTabs, allKlips, allDatasources] = await Promise.all([
       getAllKlipfolioTabs(),
       getAllKlipfolioKlips(),
       getAllKlipfolioDatasources(),
-    ]);
-
-    // Fetch deep details for klips and datasources
-    const [klipDetails, dsDetails] = await Promise.all([
-      getKlipfolioKlipDetails(allKlips.map((k) => k.id)),
-      getKlipfolioDatasourceDetails(allDatasources.map((d) => d.id)),
     ]);
 
     return (
@@ -51,17 +43,17 @@ export default async function KlipfolioPage() {
             Klipfolio
           </h1>
           <p className="mt-1 text-sm text-hero-grey-regular">
-            Volledig overzicht van je Klipfolio omgeving met visualisatietypen
-            en databronnen.
+            Overzicht van je Klipfolio omgeving. Klik op &ldquo;Herbouwen&rdquo;
+            bij een dashboard voor gedetailleerde klip- en databronanalyse.
           </p>
         </div>
 
         <KlipfolioOverview
           tabs={allTabs}
           tabsTotal={allTabs.length}
-          klips={klipDetails}
+          klips={allKlips}
           klipsTotal={allKlips.length}
-          datasources={dsDetails}
+          datasources={allDatasources}
           datasourcesTotal={allDatasources.length}
         />
       </div>

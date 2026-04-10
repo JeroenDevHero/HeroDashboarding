@@ -211,6 +211,39 @@ export interface KlipfolioDatasourceMap {
 }
 
 // ============================================================================
+// Schema Component Types — Low-level types found in /klips/{id}/schema
+// These are the actual internal Klipfolio schema component types
+// ============================================================================
+
+export const KLIPFOLIO_SCHEMA_TYPES: Record<string, string> = {
+  // Actual types found in Hero's Klipfolio environment:
+  "gauge": "Meter (target vs werkelijk)",
+  "panel-grid": "Paneel grid (samengestelde KPI's)",
+  "table": "Tabel",
+  "bar-or-line-chart": "Staaf- of lijndiagram",
+  "number-block": "Getal / KPI",
+  "pie-chart": "Taartdiagram",
+  "sparkline": "Sparkline",
+  "label": "Label / tekst",
+  // Internal schema building blocks:
+  "chart_series": "Grafiek data-reeks",
+  "chart_axis": "Grafiek as",
+  "chart_pie": "Taart component",
+  "simple_value": "Enkele waarde",
+  "mini_series": "Mini reeks (sparkline)",
+  "mini_data": "Mini data",
+  "series_data": "Reeks data",
+  "series_labels": "Reeks labels",
+  "table_col": "Tabel kolom",
+  "table_headers": "Tabel headers",
+  "table_results": "Tabel resultaten",
+  "data_slot": "Data slot",
+  "proxy": "Proxy component",
+  "separator": "Scheidingslijn",
+  "range": "Bereik",
+};
+
+// ============================================================================
 // Component Type Mapping — ALL known Klipfolio component_type values
 // ============================================================================
 

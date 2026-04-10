@@ -1,0 +1,6027 @@
+{
+  "dashboards": [
+    {
+      "name": "Aanbestedingen",
+      "id": "1975bf5c6c7330fe421a4afe299cceb2",
+      "klipCount": 11,
+      "klips": [
+        {
+          "name": "Aankomende aanbestedingen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Fairshare / omzet",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Gewonnen omzet",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Ingediende aanbestedingen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Defensie",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Hogeschool Rotterdam",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare TU Delft",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Windesheim",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste gewonnen aanbestedingen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Lopende aanbestedingen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Winratio",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aanwezigheid en targets",
+      "id": "39fb6f855489cd9ffc336b4ec1629cc8",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "Hansibor Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor dit jaar met target",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e115d22404bf6525997ff50ae30d034f",
+              "name": "Hansibor Historisch (2019)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "683c5ad2dd55dabc12a22457dfd82a7c",
+              "name": "Hansibor Historisch (2020)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "928adeea2edf38d6d88d9775bc761db9",
+              "name": "Hansibor Historisch (2021)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "01b9d41c7559ca4dca52b670f41f0da3",
+              "name": "Hansibor Historisch (2018)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5621d2e218025109b5dd7ace92ef08e9",
+              "name": "Hansibor Historisch (2017)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2e1d79e58471886d670a9cdd965a0623",
+              "name": "Hansibor Historisch (2022)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Ziekmeldingen en verlof Wognum",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "616ad1af0e61e99bad3cff03ec0789b4",
+              "name": "AFAS Ziekmeldingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "ec4ac6d7356f4196b67c95127dd0c727",
+              "name": "AFAS verlofoverzicht",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Account interesses",
+      "id": "e3a8ef99dd0a5eb0a7bc44b31e2e4658",
+      "klipCount": 3,
+      "klips": [
+        {
+          "name": "Contacten interesses",
+          "type": "pie-chart",
+          "datasources": [
+            {
+              "id": "6929c25d347236817feeaa1dd62fed16",
+              "name": "Contacten, AM, AD en interesses",
+              "connector": "salesforce"
+            },
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Interesses aangemaakt",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            },
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6929c25d347236817feeaa1dd62fed16",
+              "name": "Contacten, AM, AD en interesses",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Top 10 interesses",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Administratie Dashboard",
+      "id": "7eac9f1880c938bb3348d5f180f8b124",
+      "klipCount": 12,
+      "klips": [
+        {
+          "name": "Hansibor Alkmaar/Hoorn los",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Historisch met huidige stand en target",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e115d22404bf6525997ff50ae30d034f",
+              "name": "Hansibor Historisch (2019)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "683c5ad2dd55dabc12a22457dfd82a7c",
+              "name": "Hansibor Historisch (2020)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "928adeea2edf38d6d88d9775bc761db9",
+              "name": "Hansibor Historisch (2021)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "01b9d41c7559ca4dca52b670f41f0da3",
+              "name": "Hansibor Historisch (2018)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5621d2e218025109b5dd7ace92ef08e9",
+              "name": "Hansibor Historisch (2017)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2e1d79e58471886d670a9cdd965a0623",
+              "name": "Hansibor Historisch (2022)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Creditor.Invoice.Workflow",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "d65f97e2937e02277759014486423933",
+              "name": "PROD.Profit.Creditor.Invoice.Workflow",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.CRM.Workflow.Prolongation.Exceptions",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "454b844bb74152309a799d1c81e6953b",
+              "name": "PROD.Profit.CRM.Dossier.Workflow",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "3033ef06e6d2e23b12e0e4cdc2f284b0",
+              "name": "Projects Report Open",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Finance.Debitor.Invoice.Status.LastMonth",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "0694f0c12172d932fcd6279fa7122ed6",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "357baddb48b62052f4a705ea16cac4db",
+              "name": "PROD.Profit.Debitor.Invoice.Status.LastMonth",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Finance.Debitors.Invoice.Status",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "48bf77481da7ae940a8242934294da13",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "84068b63ecb4308cf9dfe044805af881",
+              "name": "PROD.Profit.Debitor.Invoice.Status.LastMonths",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "4a7fffcf60823044bdf28f3d94c741ac",
+              "name": "Debtor - status last months",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Finance.Invoice.Booking",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "adb8dce76532c952dda23f5e4db1d9d4",
+              "name": "PROD.Profit.Workflow.Invoice.Booking",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Project.Prolongation.Workflow",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "8e0178dc03487896a95ad59b4bb0eac0",
+              "name": "PROD.Profit.Workflow.Contract.Prolongation",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Profit.Financieel.MargePercentageForecast",
+          "type": "sparkline",
+          "datasources": [
+            {
+              "id": "247abcea192c0b3d2db3151d17c01f9e",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "48c1094dc541b88748b40d08bf22615e",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "41e3261f0da8701adcc993ab19301289",
+              "name": "PROD.Profit.Dashboarding.Forecast.LastMonths",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "dd2d29cdaad73f0e3492aa25d4c8a902",
+              "name": "PROD.Profit.Dashboarding.Forecast.LastMonths.OffsetMonths",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Profit.Projecten.Inzetten",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e3c7095b3184664fa3d80a647a4e85b1",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "9543324c3282b5459b513800ef0a7abf",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "73df4a261be359e03f8d410d0afce410",
+              "name": "PROD.Profit.Dashboarding.Project.PortfolioHistory",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "9743751cc59c6dab519fadedd04422c4",
+              "name": "SF- Placements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "67403c0f03593dfac272ae962114a7bf",
+              "name": "Salesforce Active NPlacements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "9ec3a0ebd507fa094d0efdb05b064610",
+              "name": "Contracts history manual",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "Upselling afname",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "af306eb8bdf6aa5a3a58f9ce0fcbc529",
+              "name": "Upselling progressie",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Upselling omzet",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "af306eb8bdf6aa5a3a58f9ce0fcbc529",
+              "name": "Upselling progressie",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Algemeen Recruitment",
+      "id": "e4b5d50b2250b64f20340ce0413c5fd8",
+      "klipCount": 5,
+      "klips": [
+        {
+          "name": "Finisher stats",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "b025eabecf4a834a3758b6fb18cded94",
+              "name": "i: plaatsingen (report, aanpassen)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "i: candidates",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "9fd6678908a94f497a5ea06467e451d7",
+              "name": "i: Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Kandidaten aangemaakt dit jaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "9fd6678908a94f497a5ea06467e451d7",
+              "name": "i: Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "2ed8026e4b10e75ed0737a89bab3b083",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Algemeen Sales",
+      "id": "f47f69556a426285a518d2acffc2d9d2",
+      "klipCount": 12,
+      "klips": [
+        {
+          "name": "All jobs ",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "All Placements",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            },
+            {
+              "id": "b8f5a3df3615bebf41e6f8dfc6f2b01b",
+              "name": "Plaatsingen met aanmaakdatum",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Contacten interesses",
+          "type": "pie-chart",
+          "datasources": [
+            {
+              "id": "6929c25d347236817feeaa1dd62fed16",
+              "name": "Contacten, AM, AD en interesses",
+              "connector": "salesforce"
+            },
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Interesses aangemaakt",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            },
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6929c25d347236817feeaa1dd62fed16",
+              "name": "Contacten, AM, AD en interesses",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste 10 toegevoegde Brokers",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "467bdd1a9c417937981649e98a6219cd",
+              "name": "ProfitBrokers SF",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities funnel 100M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities funnel 250M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities funnel 50M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Placements average margin",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Placements average margin per vestiging",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Time to Call",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "0794e3e966ee163c4aced36a1433fa37",
+              "name": "Contact Time to Call",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Top 10 interesses",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "bfad678a4d50bc29ff95c889d4992827",
+              "name": "Account interesses",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Aflopende Contracten",
+      "id": "d8cb6caf11bad1fa44b8fe97ecc6f472",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "Team B-IP Alkmaar Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team G-IP Alkmaar Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team L-IP Alkmaar Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team V-IP Alkmaar Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Recruitment totalen",
+      "id": "1b8122b9ad64231e3692b52c2ec61ef9",
+      "klipCount": 5,
+      "klips": [
+        {
+          "name": "Alkmaar B-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar G-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar L-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "legenda proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Team B-IP",
+      "id": "d137c5597bef96a5b2117254261401a8",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanvragen Alkmaar B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Academy Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar - B-IP Laatste contact met actieve kandidaten",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar B-IP sales pipeline new",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar B-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Workload B-IP Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5dc8bf5c661b21772d7b21d0a2f523ba",
+              "name": "Salesforce Workload Hunters",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Team G-IP",
+      "id": "65aef4914d104cb90e9febb39da5cd83",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanvragen Alkmaar G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar - G-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar G-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten (Gip-Alkmaar)",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar G-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Team L-IP",
+      "id": "b206888694ba6312f1778a4f4ca51541",
+      "klipCount": 7,
+      "klips": [
+        {
+          "name": "Aanvragen Alkmaar L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar - L-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar L-IP sales pipeline new",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten (Lip-Alkmaar)",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar L-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Team NB",
+      "id": "d0c082b42705a16aa093b3328bb5a19a",
+      "klipCount": 6,
+      "klips": [
+        {
+          "name": "Aanvragen Alkmaar NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar NB sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar NB",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar NB",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Team V-IP",
+      "id": "4f88b1d15c5d3bbeda48d650b9e707ff",
+      "klipCount": 7,
+      "klips": [
+        {
+          "name": "Aanvragen Alkmaar V-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar - V-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar V-IP sales pipeline new",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar V-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten (Vip-Alkmaar)",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar V-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar V-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Totalen en forecast",
+      "id": "1746a1bc5e41230f8eb201d80dc94e11",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Actuele aanvragen Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "In en Uitstroom Overzicht Tabellen Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "b5b8ef6e0f686707b01a23dcabeaa589",
+              "name": "PROD.Profit.Project.History.Portfolio",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Open Inschrijvingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Ziekmeldingen en verlof Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "616ad1af0e61e99bad3cff03ec0789b4",
+              "name": "AFAS Ziekmeldingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "ec4ac6d7356f4196b67c95127dd0c727",
+              "name": "AFAS verlofoverzicht",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alkmaar - Workload",
+      "id": "e23856cafed18ef303799521edaf290b",
+      "klipCount": 1,
+      "klips": [
+        {
+          "name": "Workload Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5dc8bf5c661b21772d7b21d0a2f523ba",
+              "name": "Salesforce Workload Hunters",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Contracts dashboard",
+      "id": "0f39dcb718468494e9ee274ce62a50ae",
+      "klipCount": 14,
+      "klips": [
+        {
+          "name": "Contracts - Afgeronde contracten",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts aantal aflopende contracten",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts aflopende contracten",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "Contracts doorlooptijden",
+          "type": "gauge",
+          "datasources": []
+        },
+        {
+          "name": "Contracts instroom plaatsingen",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts nog niet ondertekende contracten",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts nog niet verstuurde contracten",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts plaatsingen in behandeling",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts plaatsingen wachten op reactie",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Contracts workload plaatsingen",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "DossierObjectTasks",
+          "type": "gauge",
+          "datasources": []
+        },
+        {
+          "name": "gemiddelde doorlooptijd",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Kritieke opdrachten Alkmaar",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Kritieke opdrachten Hoorn",
+          "type": "number-block",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Contracts dashboard [test]",
+      "id": "64d3018449483679f8447736f67788f9",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "DossierObjectTasks",
+          "type": "gauge",
+          "datasources": []
+        },
+        {
+          "name": "gemiddelde doorlooptijd",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Kritieke opdrachten Alkmaar",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Kritieke opdrachten Hoorn",
+          "type": "number-block",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Defensie dashboard",
+      "id": "c9df2a12922c138eed29841468e21b59",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanbiedingen Defensie",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "930037b605ec6400efea70d4b25253bf",
+              "name": "Aanbieding vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Aanvragen Defensie",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "937cd4a01db4200875c77e896498b1ab",
+              "name": "Open aanvragen overzicht uitgebreid",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Defensie aanvragen totalen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Defensie proces short stats",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "indicator aanvragen Defensie",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Indicator intakes Defensie",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Defensie",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Defensie",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Email Rapportage",
+      "id": "e0651ef8e1063b72c2c4e8623ef3ff4f",
+      "klipCount": 16,
+      "klips": [
+        {
+          "name": "ForecastChart NextYear",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "ForecastGauge",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "ForecastGauge ThisYear",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Schiphol",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Lopende aanbestedingen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "NIELSTRY Hansibor Historisch met huidige stand en target",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e115d22404bf6525997ff50ae30d034f",
+              "name": "Hansibor Historisch (2019)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "683c5ad2dd55dabc12a22457dfd82a7c",
+              "name": "Hansibor Historisch (2020)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "928adeea2edf38d6d88d9775bc761db9",
+              "name": "Hansibor Historisch (2021)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "01b9d41c7559ca4dca52b670f41f0da3",
+              "name": "Hansibor Historisch (2018)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5621d2e218025109b5dd7ace92ef08e9",
+              "name": "Hansibor Historisch (2017)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2e1d79e58471886d670a9cdd965a0623",
+              "name": "Hansibor Historisch (2022)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Perm Intakes(aantal)",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "096b3bf26793510f99d4bb6693a58f22",
+              "name": "New Job W/WO Application (Perm) (Report, aanpassen)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Prod.Salesforce.Jobs.Applications.Intakes Copy",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Profit.Projecten.Inzetten",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e3c7095b3184664fa3d80a647a4e85b1",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "9543324c3282b5459b513800ef0a7abf",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "73df4a261be359e03f8d410d0afce410",
+              "name": "PROD.Profit.Dashboarding.Project.PortfolioHistory",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "9743751cc59c6dab519fadedd04422c4",
+              "name": "SF- Placements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "67403c0f03593dfac272ae962114a7bf",
+              "name": "Salesforce Active NPlacements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "9ec3a0ebd507fa094d0efdb05b064610",
+              "name": "Contracts history manual",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target Hero totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Ziekmeldingen en verlof",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "616ad1af0e61e99bad3cff03ec0789b4",
+              "name": "AFAS Ziekmeldingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "ec4ac6d7356f4196b67c95127dd0c727",
+              "name": "AFAS verlofoverzicht",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Email rapportage nieuwe klipjes",
+      "id": "c92db20b1241985739672cbd4f216f16",
+      "klipCount": 16,
+      "klips": [
+        {
+          "name": "Aanbiedingen vanaf start",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar B-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar G-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar L-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hero CV parsing",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "f5ebe8ef738cfb18f6013d6c383c1e67",
+              "name": "CV parsing",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hero sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn G-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn L-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes vanaf start",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP instroom",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "467bdd1a9c417937981649e98a6219cd",
+              "name": "ProfitBrokers SF",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Overzicht Team Portefeuille",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "Percentages sales pipeline alle teams",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen vanaf start",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            },
+            {
+              "id": "10e6558e753c97025d4a46b87b51d597",
+              "name": "Placements team with margin",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Verdeling portefeuille ZZP-Leverancier",
+          "type": "panel-grid",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Fieldmanagement",
+      "id": "9a24132efa9016296d176efaf6a6b143",
+      "klipCount": 5,
+      "klips": [
+        {
+          "name": "Fieldmanagement aantal contacten",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "7dc23b81ee2f1484af66e01f6382fcc1",
+              "name": "Fieldmanagement",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Fieldmanagement aantal projecten",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "7dc23b81ee2f1484af66e01f6382fcc1",
+              "name": "Fieldmanagement",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Gespreksverslagen Fieldmanagement",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1a5a5264b3b681752c9797e1475e096f",
+              "name": "Fieldmanagement gespreksverslagen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Alkmaar",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Hoorn tbv Fieldmanagement",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Finance - Omzet en ouderdom",
+      "id": "b28bcd364840b45967f36796cadefd01",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "Herorito 2024/2025",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "ff545e13d9d152af92a71909c9e2b3e7",
+              "name": "Herorito Scorito",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Project.Realization.Top10.All",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "10726ccfbfa299531e108fbb37d9e2e2",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "d159305834d4e535aea715745791409b",
+              "name": "Realisatie klanten alle",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Project.Realization.Top10.Brokering",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "832820354a3f90c653114d6749325fcb",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "6bdef31af1b1a8df745d0f401b0727a8",
+              "name": "Realisatie klanten brokering",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "PROD.Profit.Project.Realization.Top10.Interim",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "77d0639fb6de4cdd8d72621bca9ea330",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "ba69a31b0b995d2a515e619654442521",
+              "name": "Realisatie klanten interim",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hansibor for Hero Today",
+      "id": "94ad9f5df98837bae0439a2e233c32bd",
+      "klipCount": 1,
+      "klips": [
+        {
+          "name": "Hansibor",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Herorito",
+      "id": "59deab7db564695a52643654c978fc4e",
+      "klipCount": 5,
+      "klips": [
+        {
+          "name": "Herorito 2024/2025",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "ff545e13d9d152af92a71909c9e2b3e7",
+              "name": "Herorito Scorito",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Target Hansibor Hoorn",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Target Interne recruitment Hoorn",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "914cea8f83bf92e40b12088cb9ec0596",
+              "name": "Interne vacature ingevuld",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team G-IP Hoorn Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team V-IP Hoorn Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Portefeuilles per team ",
+      "id": "c7260e390c31fe6a6a69d7b367b4b662",
+      "klipCount": 2,
+      "klips": [
+        {
+          "name": "Team G-IP Hoorn Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Team L-IP Hoorn Portefeuille",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Recruitment totalen",
+      "id": "6b460a29d38e33f2dc5bcd783adcb32c",
+      "klipCount": 5,
+      "klips": [
+        {
+          "name": "Hero proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn G-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn L-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "legenda proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Team G-IP",
+      "id": "e520b091ef5ae98b469cc210ec542651",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanvragen Hoorn G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn - G-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn G-IP proces stats",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn G-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Hoorn G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten G-IP Hoorn",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Hoorn G-IP met target",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn G-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Team L-IP",
+      "id": "289c80e0fa153dbac5831b1c9424c8c1",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanvragen Hoorn L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn - L-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn L-IP proces stats",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn L-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Hoorn L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten L-IP Hoorn",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Hoorn L-IP met target",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn L-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Team V-IP",
+      "id": "ac4ca86fdeee80d660b8a7fd2df9df03",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Aanvragen Hoorn V-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn - V-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn V-IP proces stats",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn V-IP sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Hoorn V-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste contact met actieve kandidaten V-IP Hoorn",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Hoorn V-IP met target",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn V-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hoorn - Totalen en forecast",
+      "id": "22eefe7ad27db36b25132cff59967a13",
+      "klipCount": 6,
+      "klips": [
+        {
+          "name": "Actuele aanvragen Hoorn",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Hoorn G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Hoorn L-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Open Inschrijvingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Interne Recruitment",
+      "id": "8ad8b04e8d46371d076b51f5d52a26ae",
+      "klipCount": 6,
+      "klips": [
+        {
+          "name": "Gesprekken interne vacatures",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "Ingevulde interne vacatures",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "interne vacatures KPI",
+          "type": "number-block",
+          "datasources": []
+        },
+        {
+          "name": "Open interne vacatures Alkmaar",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "Open interne vacatures Hoorn",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "Open interne vacatures Wognum",
+          "type": "table",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Klantscore aanbestedingen",
+      "id": "e6d68ea138e45718dcf2f140e613eebb",
+      "klipCount": 12,
+      "klips": [
+        {
+          "name": "Klantscore Fairshare Amsterdam UMC",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare De Connectie",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Defensie",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Gemeente Almere",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Hogeschool Rotterdam",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Nova College",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare P-Direct",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare SSC-ONS",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare TU Delft",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Vitens",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Vrije Universiteit",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Klantscore Fairshare Windesheim",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "2863f3e0c7fa56adaf42b5042cf6558b",
+              "name": "Profit nacalculatie aanbestedingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "619f00e19ac28e9532acea11cf253b5e",
+              "name": "SF Aanbestedingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Marketing",
+      "id": "9f9a4c4d70919ecbd4308c12298e83be",
+      "klipCount": 9,
+      "klips": [
+        {
+          "name": "Facebook feed",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "hero.eu traffic by channel",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Interimprofessionals.hero.eu traffic by channel",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "LinkedIn Key Metrics (Last 30 Days)",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "4907b26ad124653e2982a56f51565971",
+              "name": "LinkedIn Key Metrics (Last 30 Days) 2",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "d6d39f1df98504f8c3b4fe3eecda70c9",
+              "name": "LinkedIn Key Metrics (Previous 30 Days) 3",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "4418636747a8a27f1c74c5af7d75438a",
+              "name": "LinkedIn New Followers (Last 30 Days) 2",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "b89f7955a4efc1d91dab25383eca9657",
+              "name": "LinkedIn New Followers (Prev 30 Days) 2",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "51c544a1e6381e79523acf5365a4fd78",
+              "name": "LinkedIn Current Followers (Lifetime)",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "MSP.eu traffic by channel",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "Social Media Followers",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "31a61b4f8a0e96663e54aa7f7cf921f3",
+              "name": "Facebook Basic Page Info",
+              "connector": "facebook"
+            },
+            {
+              "id": "91af9d283224702e0c82ed4776632035",
+              "name": "Instagram Followers",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "4418636747a8a27f1c74c5af7d75438a",
+              "name": "LinkedIn New Followers (Last 30 Days) 2",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Website traffic by channel",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        },
+        {
+          "name": "websites traffic tabel",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "Werkenbij.hero.eu traffic by channel",
+          "type": "bar-or-line-chart",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "MSP Overview",
+      "id": "c55bca16f0ba4436c90926379f825bdf",
+      "klipCount": 9,
+      "klips": [
+        {
+          "name": "Aandeel Hansibor MSP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "808bd8d454313c0df68d0f185948911d",
+              "name": "MSP hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Actieve kandidaten en contracten MSP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "c2ef834ae810efc1cfaae7cd6dd26ac8",
+              "name": "Profit Candidate Count",
+              "connector": "salesforce"
+            },
+            {
+              "id": "73df4a261be359e03f8d410d0afce410",
+              "name": "PROD.Profit.Dashboarding.Project.PortfolioHistory",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "ForecastChart in Months MSP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Laatste 10 toegevoegde Brokers",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "467bdd1a9c417937981649e98a6219cd",
+              "name": "ProfitBrokers SF",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP bijdrage IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            },
+            {
+              "id": "51970ffee891418a0c26bf25cfe15b55",
+              "name": "MSP Accounts",
+              "connector": "salesforce"
+            },
+            {
+              "id": "b8f5a3df3615bebf41e6f8dfc6f2b01b",
+              "name": "Plaatsingen met aanmaakdatum",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP gemiddelde marge",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "3431ecde23fb307b3e7ea0b7bf5cccfb",
+              "name": "AFAS factuurregels met project info",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "MSP Klanten (vorige maand)",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "fd54d8694774715f01a0262b40baace6",
+              "name": "ProfitMargin per MSP Klant",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP plaatsingen IP per klant",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "b8f5a3df3615bebf41e6f8dfc6f2b01b",
+              "name": "Plaatsingen met aanmaakdatum",
+              "connector": "salesforce"
+            },
+            {
+              "id": "51970ffee891418a0c26bf25cfe15b55",
+              "name": "MSP Accounts",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Target broker inzetten",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "73df4a261be359e03f8d410d0afce410",
+              "name": "PROD.Profit.Dashboarding.Project.PortfolioHistory",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MSP Sales",
+      "id": "bf26e4b7e6112ba5f9276ba785468536",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "MSP Opportunities funnel 100M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities funnel 250M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities funnel 50M",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "MSP Opportunities tabel",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "998510b88bc2218e00133baea825c253",
+              "name": "MSP Opportunities",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Recruitment tabellen",
+      "id": "0909dc1d4bc84d085f17e244ec45da96",
+      "klipCount": 4,
+      "klips": [
+        {
+          "name": "Aanbiedingen totalen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            },
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Aanvragen totalen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "9fd6678908a94f497a5ea06467e451d7",
+              "name": "i: Candidates",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Kandidaten totalen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "9fd6678908a94f497a5ea06467e451d7",
+              "name": "i: Candidates",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen totalen",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "1dcb076a89ec7e78e8bc367771018b46",
+              "name": "Users and teams Salesforce",
+              "connector": "salesforce"
+            },
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Recruitment totalen",
+      "id": "3807a132897af07e6654bb865a23c642",
+      "klipCount": 12,
+      "klips": [
+        {
+          "name": "Alkmaar B-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar G-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar L-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Alkmaar zonder defensie proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hero proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn G-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn L-IP proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "legenda proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "legenda proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "legenda proces stats incl Sales",
+          "type": "panel-grid",
+          "datasources": []
+        }
+      ]
+    },
+    {
+      "name": "Recruitment Trends",
+      "id": "d6e8581702646c0ccc7290cb9d8603b5",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Recruitment trends",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Alkmaar B-IP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Alkmaar G-IP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Alkmaar L-IP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Hoorn G-IP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Recruitment trends Hoorn L-IP",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schiphol - Team B-IP",
+      "id": "491378bedffa08d58bddeed209bda3f9",
+      "klipCount": 7,
+      "klips": [
+        {
+          "name": "Aanvragen Schiphol B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Schiphol B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Schiphol B-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol - B-IP Laatste contact met actieve kandidaten",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol - B-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol B-IP sales pipeline new",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol B-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schiphol - Team G-IP",
+      "id": "57f0eb967ed984729e19ebe0aa57bf27",
+      "klipCount": 7,
+      "klips": [
+        {
+          "name": "Aanvragen Schiphol G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Schiphol G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Schiphol G-IP met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol - G-IP Laatste contact met actieve kandidaten",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "55c89361d1bc280e2b5dc1f50aa63b20",
+              "name": "Last Call Date Active Candidates",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol - G-IP Status terugkoppelingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol G-IP sales pipeline new",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol G-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schiphol - Team NB",
+      "id": "991dd7fba4ad84d97c4d442d580a8a36",
+      "klipCount": 6,
+      "klips": [
+        {
+          "name": "Aanvragen Schiphol NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Schiphol NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Schiphol NB",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Schiphol NB met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Schiphol NB sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol NB",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schiphol totalen",
+      "id": "5b8f74ca6f14ab99d065fd284cea0844",
+      "klipCount": 8,
+      "klips": [
+        {
+          "name": "Actuele aanvragen Schiphol",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Schiphol",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "In en Uitstroom Overzicht Tabellen Schiphol",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "b5b8ef6e0f686707b01a23dcabeaa589",
+              "name": "PROD.Profit.Project.History.Portfolio",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Intakes Schiphol",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Open Inschrijvingen",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "3b17cafd6c1a927284fe9654b321c9b4",
+              "name": "Salesforce applications status",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Plaatsingen Schiphol met target",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Ziekmeldingen en verlof Schiphol",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "616ad1af0e61e99bad3cff03ec0789b4",
+              "name": "AFAS Ziekmeldingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "ec4ac6d7356f4196b67c95127dd0c727",
+              "name": "AFAS verlofoverzicht",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "The Wall - Links Boven",
+      "id": "0a356056a644db1543e90129938cb6df",
+      "klipCount": 14,
+      "klips": [
+        {
+          "name": "All jobs ",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "All Placements",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            },
+            {
+              "id": "b8f5a3df3615bebf41e6f8dfc6f2b01b",
+              "name": "Plaatsingen met aanmaakdatum",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar G-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar L-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target Alkmaar V-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hero totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn G-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn L-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Hoorn totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Target MSP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "808bd8d454313c0df68d0f185948911d",
+              "name": "MSP hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "51970ffee891418a0c26bf25cfe15b55",
+              "name": "MSP Accounts",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol B-IP",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol NB",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Target Schiphol totaal",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "27a7795b70987ff0bf93761951af4ee8",
+              "name": "Team Targets L-IP",
+              "connector": "salesforce"
+            },
+            {
+              "id": "db1f33258c4f62a2f687049e849fa1a9",
+              "name": "Plaatsingen Target bijdrage vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "3746fe811f8b3984a69166568ce09566",
+              "name": "Team targets vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "383b790f1fca048d140398fd06916471",
+              "name": "Intakes vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "8698ef1abb9a63c396bb88137f9e3c42",
+              "name": "Aanvragen vestigingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "ef646ac9422d2b586f0b73bc5def3f0f",
+              "name": "MSP SF Plaatsingen",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5c165687b921960c049fc203a8b5edcb",
+              "name": "Aanvragen vestigingen NB",
+              "connector": "salesforce"
+            },
+            {
+              "id": "6703469af20fdbd24525e3856a19e58c",
+              "name": "Lopende Intakes Records",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "The Wall - Links Onder",
+      "id": "00a8ac47defb2e5596ce99ce4f9bc434",
+      "klipCount": 10,
+      "klips": [
+        {
+          "name": "Aantal kandidaten",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "8aabff528c216361e9a36271491c7fd8",
+              "name": "Aantallen Kandidaten",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Actual project length based on end date",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "Alkmaar sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Gesloten aanvragen (ouderdom op basis van &#39;open&#39; datum)",
+          "type": "panel-grid",
+          "datasources": []
+        },
+        {
+          "name": "Hero sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hoorn sales pipeline",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Percentages sales pipeline alle teams",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "1bb206caabe54a016bec54466dc0d973",
+              "name": "Sales pipeline",
+              "connector": "salesforce"
+            },
+            {
+              "id": "430734e82d248bb25898b3cba373a275",
+              "name": "i: Jobs",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Workload Alkmaar Samenvatting",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5dc8bf5c661b21772d7b21d0a2f523ba",
+              "name": "Salesforce Workload Hunters",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Workload Hoorn Samenvatting",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5dc8bf5c661b21772d7b21d0a2f523ba",
+              "name": "Salesforce Workload Hunters",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Ziekmeldingen en verlof",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "616ad1af0e61e99bad3cff03ec0789b4",
+              "name": "AFAS Ziekmeldingen",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "ec4ac6d7356f4196b67c95127dd0c727",
+              "name": "AFAS verlofoverzicht",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "The Wall - Rechts Boven",
+      "id": "0ed24e35bb9e441ef955e1f664a4516c",
+      "klipCount": 12,
+      "klips": [
+        {
+          "name": "AZ Skybox &ndash; Stoelen Beschikbaarheid",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "094d09a30d82015b20955f69f4dc40da",
+              "name": "Hero AZ Februari 2026 ",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "ForecastChart NextYear",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "ForecastChart tm2026",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "ForecastGauge",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "ForecastGauge ThisYear",
+          "type": "gauge",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Alkmaar",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Hansibor Schiphol",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            },
+            {
+              "id": "1273463c4374f8dba4fa4622dd53fb7c",
+              "name": "Vestiging targets",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Heroday",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "Heroday Next Year",
+          "type": "panel-grid",
+          "datasources": [
+            {
+              "id": "b65df6f20d433899e81041aaa32a9965",
+              "name": "ProfitForecast",
+              "connector": "salesforce"
+            },
+            {
+              "id": "75baee8122c84e26dac657dc0c5f3087",
+              "name": "Omzet 2025",
+              "connector": "onedrive"
+            },
+            {
+              "id": "14c9d794ed3d34752a1fd66225e832c6",
+              "name": "Omzet 2026",
+              "connector": "onedrive"
+            },
+            {
+              "id": "e72464dcb18fb62e23d67112ecd3fbac",
+              "name": "Omzet 2027",
+              "connector": "onedrive"
+            }
+          ]
+        },
+        {
+          "name": "NIELSTRY Hansibor Historisch met huidige stand en target",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e115d22404bf6525997ff50ae30d034f",
+              "name": "Hansibor Historisch (2019)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "683c5ad2dd55dabc12a22457dfd82a7c",
+              "name": "Hansibor Historisch (2020)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "928adeea2edf38d6d88d9775bc761db9",
+              "name": "Hansibor Historisch (2021)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "01b9d41c7559ca4dca52b670f41f0da3",
+              "name": "Hansibor Historisch (2018)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5621d2e218025109b5dd7ace92ef08e9",
+              "name": "Hansibor Historisch (2017)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "2e1d79e58471886d670a9cdd965a0623",
+              "name": "Hansibor Historisch (2022)",
+              "connector": "salesforce"
+            },
+            {
+              "id": "1dce46155694ca13a2a94eeecae4722f",
+              "name": "Hansibor Historisch",
+              "connector": "salesforce"
+            },
+            {
+              "id": "5794a92089843a498e07868c6858a8d5",
+              "name": "Hansibor",
+              "connector": "sharepoint"
+            }
+          ]
+        },
+        {
+          "name": "Profit.Projecten.Inzetten",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "e3c7095b3184664fa3d80a647a4e85b1",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "9543324c3282b5459b513800ef0a7abf",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "73df4a261be359e03f8d410d0afce410",
+              "name": "PROD.Profit.Dashboarding.Project.PortfolioHistory",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "9743751cc59c6dab519fadedd04422c4",
+              "name": "SF- Placements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "67403c0f03593dfac272ae962114a7bf",
+              "name": "Salesforce Active NPlacements",
+              "connector": "salesforce"
+            },
+            {
+              "id": "9ec3a0ebd507fa094d0efdb05b064610",
+              "name": "Contracts history manual",
+              "connector": "onedrive"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "The Wall - Rechts Onder",
+      "id": "d2649bef64fdf75a52e24705e976dfae",
+      "klipCount": 11,
+      "klips": [
+        {
+          "name": "Gala Aanwezigheid",
+          "type": "label",
+          "datasources": [
+            {
+              "id": "44d1ba7ff65dd9e33249665a6c388dbf",
+              "name": "Gala Aanwezigheid (Ja)",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Hero portaal",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "61bf8bb7275560ac3dd4d7a071eb5355",
+              "name": "SF Dossieritems in Kandidaatportaal",
+              "connector": "salesforce"
+            }
+          ]
+        },
+        {
+          "name": "Hero.jobs Bezoeken",
+          "type": "label",
+          "datasources": [
+            {
+              "id": "bc2d613ac8f3ebe4591c4caa298f0003",
+              "name": "?",
+              "connector": "?"
+            }
+          ]
+        },
+        {
+          "name": "Hero.jobs Bezoeken per dag",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "bc2d613ac8f3ebe4591c4caa298f0003",
+              "name": "?",
+              "connector": "?"
+            }
+          ]
+        },
+        {
+          "name": "Hero.jobs Unieke bezoekers",
+          "type": "label",
+          "datasources": [
+            {
+              "id": "bc2d613ac8f3ebe4591c4caa298f0003",
+              "name": "?",
+              "connector": "?"
+            }
+          ]
+        },
+        {
+          "name": "Hero.jobs Unieke bezoekers per dag",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "bc2d613ac8f3ebe4591c4caa298f0003",
+              "name": "?",
+              "connector": "?"
+            }
+          ]
+        },
+        {
+          "name": "Open interne vacatures Wognum",
+          "type": "table",
+          "datasources": []
+        },
+        {
+          "name": "PROD.Portefeuille.Overzicht",
+          "type": "table",
+          "datasources": [
+            {
+              "id": "1e35c85d7b61a6184dd5f7d7aa67713f",
+              "name": "PROD.Profit.Project.Open.Average",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Social Media Followers",
+          "type": "number-block",
+          "datasources": [
+            {
+              "id": "3f69b8893603d13c57dbgooderaspilk",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "d91c22d5a5f4c21d8302gooderaspilk",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "4f3646bd637f417a7b7fgooderaspilk",
+              "name": "?",
+              "connector": "?"
+            },
+            {
+              "id": "f0093f6fa4b3ac0f2698506aafcf9418",
+              "name": "Facebook Basic Page Info",
+              "connector": "facebook"
+            },
+            {
+              "id": "da69c4700cb5d09452349bb19da918e6",
+              "name": "Instagram Followers",
+              "connector": "simple_rest"
+            },
+            {
+              "id": "6490bc932cad36828d9f5ea6432f0a46",
+              "name": "LinkedIn New Followers (Last 30 Days) 2",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Stemcampagne stemmen per dag",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "ba7e9398785549070b30152adc5ab9a2",
+              "name": "Stemmen stemcampagne",
+              "connector": "simple_rest"
+            }
+          ]
+        },
+        {
+          "name": "Stemcampagne totaal aantal stemmen",
+          "type": "label",
+          "datasources": [
+            {
+              "id": "ba7e9398785549070b30152adc5ab9a2",
+              "name": "Stemmen stemcampagne",
+              "connector": "simple_rest"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workload Hoorn",
+      "id": "6a8230c1986465f5c9a238e06858a305",
+      "klipCount": 1,
+      "klips": [
+        {
+          "name": "Workload Hoorn",
+          "type": "bar-or-line-chart",
+          "datasources": [
+            {
+              "id": "5dc8bf5c661b21772d7b21d0a2f523ba",
+              "name": "Salesforce Workload Hunters",
+              "connector": "salesforce"
+            },
+            {
+              "id": "361452d7f93ea4073a570418aad83620",
+              "name": "New Job W/WO Applications (total)",
+              "connector": "salesforce"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "componentTypes": {
+      "table": 72,
+      "bar-or-line-chart": 68,
+      "panel-grid": 73,
+      "gauge": 95,
+      "pie-chart": 2,
+      "number-block": 36,
+      "sparkline": 1,
+      "label": 4
+    },
+    "connectorTypes": {
+      "salesforce": 554,
+      "simple_rest": 71,
+      "sharepoint": 51,
+      "onedrive": 24,
+      "facebook": 2
+    },
+    "totalKlipPlacements": 351,
+    "uniqueKlips": 281
+  }
+}
