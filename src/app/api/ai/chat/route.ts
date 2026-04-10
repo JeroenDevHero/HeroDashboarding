@@ -6,9 +6,11 @@ import {
   executePreviewData,
   executeListDatasources,
   executeGetDataCatalog,
+  executeGetDataIntelligence,
   executeGetKnowledgeContext,
   executeSaveKnowledge,
 } from "@/lib/ai/tools";
+import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -69,8 +71,9 @@ Werkwijze:
 1. Haal ALTIJD eerst de kennisbank op via get_knowledge_context voor bedrijfscontext
 2. Haal beschikbare databronnen op via list_datasources
 3. Gebruik get_data_catalog om de datastructuur te begrijpen
-4. Preview data met preview_data voordat je een klip aanmaakt
-5. Maak de klip aan met create_klip en bevestig dat het klaar is
+4. Gebruik get_data_intelligence om te zien welke queries eerder succesvol waren en hergebruik bewezen patronen
+5. Preview data met preview_data voordat je een klip aanmaakt
+6. Maak de klip aan met create_klip en bevestig dat het klaar is
 
 Opmaak:
 - Gebruik ALTIJD nette, leesbare Nederlandse namen (geen veldnamen met underscores)
@@ -217,6 +220,21 @@ const TOOLS: Anthropic.Messages.Tool[] = [
     },
   },
   {
+    name: "get_data_intelligence",
+    description:
+      "Haal slimme inzichten op over een databron: populaire queries, kolom-statistieken, en bewezen patronen. Gebruik dit na get_data_catalog om te zien welke queries al succesvol zijn geweest.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        data_source_id: {
+          type: "string",
+          description: "UUID van de databron",
+        },
+      },
+      required: ["data_source_id"],
+    },
+  },
+  {
     name: "get_knowledge_context",
     description:
       "Haal alle bedrijfskennis op uit de kennisbank. Gebruik dit ALTIJD aan het begin van een gesprek om context te krijgen over het bedrijf, definities, en afspraken.",
@@ -274,6 +292,11 @@ function summarizeToolResult(toolName: string, result: unknown): string {
     return typeof result === "string"
       ? `catalog opgehaald (${result.split("\n").filter((l) => l.startsWith("Tabel:")).length} tabellen)`
       : "catalog opgehaald";
+  }
+  if (toolName === "get_data_intelligence") {
+    return typeof result === "string"
+      ? `data intelligence opgehaald (${result.split("\n").filter((l) => l.startsWith("- \"")).length} patronen)`
+      : "data intelligence opgehaald";
   }
   if (toolName === "get_knowledge_context") {
     return typeof result === "string"
@@ -368,6 +391,7 @@ export async function POST(request: Request) {
 
         const createdKlipIds: string[] = [];
         let lastPreviewResult: unknown = null;
+        let lastPreviewInput: { query: string; data_source_id?: string } | null = null;
         const allMessages = [...messages];
 
         try {
@@ -447,6 +471,19 @@ export async function POST(request: Request) {
                         (result as Record<string, unknown>).id as string
                       );
                     }
+                    // Auto-learn from klip creation
+                    if (result && !isError && lastPreviewInput) {
+                      const lastUserMsg = messages.filter((m) => m.role === "user").pop();
+                      learnFromKlipCreation({
+                        dataSourceId: lastPreviewInput.data_source_id || "",
+                        naturalLanguage: lastUserMsg?.content || "",
+                        sqlQuery: lastPreviewInput.query || "",
+                        klipType: (toolBlock.input as Record<string, unknown>).type as string,
+                        config: ((toolBlock.input as Record<string, unknown>).config as Record<string, unknown>) || {},
+                      }).catch((err) =>
+                        console.error("[intelligence] Learn failed:", err)
+                      );
+                    }
                     break;
                   case "preview_data":
                     result = await executePreviewData(
@@ -455,14 +492,24 @@ export async function POST(request: Request) {
                       >[0],
                       user.id
                     );
-                    // Track preview data so create_klip can attach it
-                    if (result && !isError) lastPreviewResult = result;
+                    // Track preview data and input so create_klip can attach it & learn from it
+                    if (result && !isError) {
+                      lastPreviewResult = result;
+                      lastPreviewInput = toolBlock.input as { query: string; data_source_id?: string };
+                    }
                     break;
                   case "list_datasources":
                     result = await executeListDatasources(user.id);
                     break;
                   case "get_data_catalog":
                     result = await executeGetDataCatalog(
+                      (
+                        toolBlock.input as { data_source_id: string }
+                      ).data_source_id
+                    );
+                    break;
+                  case "get_data_intelligence":
+                    result = await executeGetDataIntelligence(
                       (
                         toolBlock.input as { data_source_id: string }
                       ).data_source_id

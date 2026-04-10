@@ -4,6 +4,7 @@ import {
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
 import { getCatalogSummary } from "@/lib/datasources/catalog";
+import { getDataIntelligence } from "@/lib/datasources/intelligence";
 import { getKnowledgeContext } from "@/lib/actions/knowledge";
 
 /** Valid klip_type enum values matching the Postgres enum */
@@ -174,6 +175,12 @@ export async function executeGetDataCatalog(
   dataSourceId: string
 ): Promise<string> {
   return getCatalogSummary(dataSourceId);
+}
+
+export async function executeGetDataIntelligence(
+  dataSourceId: string
+): Promise<string> {
+  return getDataIntelligence(dataSourceId);
 }
 
 export async function executeGetKnowledgeContext(): Promise<string> {

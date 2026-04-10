@@ -3,6 +3,7 @@ import {
   executeDatabricksQuery,
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
+import { analyzeColumnStats } from "@/lib/datasources/intelligence";
 
 export interface CatalogEntry {
   id: string;
@@ -151,6 +152,14 @@ export async function analyzeDatabricksSource(
         error.message
       );
     }
+
+    // Fire-and-forget: analyze column statistics for this table
+    analyzeColumnStats(dataSourceId, config, tableName).catch((err) =>
+      console.error(
+        `[catalog] Column stats analysis failed for ${fqn}:`,
+        err instanceof Error ? err.message : err
+      )
+    );
   }
 }
 
