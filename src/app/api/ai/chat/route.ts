@@ -355,24 +355,28 @@ export async function POST(request: Request) {
 
     const readable = new ReadableStream({
       async start(controller) {
-        // Send keepalive pings every 5 seconds to prevent proxy/connection timeout
+        console.log("[AI Chat] Stream started");
+
+        // Send keepalive as proper SSE data events every 3 seconds
         const keepalive = setInterval(() => {
           try {
-            controller.enqueue(encoder.encode(": keepalive\n\n"));
+            controller.enqueue(encoder.encode(`data: {"type":"keepalive"}\n\n`));
           } catch {
             clearInterval(keepalive);
           }
-        }, 5000);
+        }, 3000);
 
         const createdKlipIds: string[] = [];
-        let lastPreviewResult: unknown = null; // Track preview data across tool rounds
-        const allMessages = [...messages]; // Track messages for persistence
+        let lastPreviewResult: unknown = null;
+        const allMessages = [...messages];
 
         try {
           let currentMessages: Anthropic.Messages.MessageParam[] = [...anthropicMessages];
           let currentStream = stream;
 
           for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+            console.log(`[AI Chat] Round ${round} starting`);
+
             // Stream events from the current stream to the client
             for await (const event of currentStream) {
               controller.enqueue(
@@ -381,6 +385,7 @@ export async function POST(request: Request) {
             }
 
             const finalMessage = await currentStream.finalMessage();
+            console.log(`[AI Chat] Round ${round} done, stop_reason: ${finalMessage.stop_reason}, content blocks: ${finalMessage.content.length}`);
 
             // Check if there are tool_use content blocks
             const toolUseBlocks = finalMessage.content.filter(
@@ -421,6 +426,7 @@ export async function POST(request: Request) {
               let isError = false;
 
               try {
+                console.log(`[AI Chat] Executing tool: ${toolBlock.name}`);
                 switch (toolBlock.name) {
                   case "create_klip":
                     result = await executeCreateKlip(
@@ -580,6 +586,7 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
+          console.error("[AI Chat] Stream error:", error instanceof Error ? error.message : error);
           const errorMessage =
             error instanceof Error ? error.message : "Stream fout";
           controller.enqueue(
