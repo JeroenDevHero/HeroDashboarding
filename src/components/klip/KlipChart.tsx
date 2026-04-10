@@ -66,6 +66,32 @@ function getColors(custom?: string[]) {
   return custom && custom.length > 0 ? custom : CHART_COLORS;
 }
 
+/** Format numbers with Dutch thousands separator (1.234.567) */
+function formatNumber(val: unknown): string {
+  if (typeof val === "number") {
+    return val.toLocaleString("nl-NL", { maximumFractionDigits: 2 });
+  }
+  // Try parsing string numbers
+  if (typeof val === "string" && !isNaN(Number(val)) && val.trim() !== "") {
+    return Number(val).toLocaleString("nl-NL", { maximumFractionDigits: 2 });
+  }
+  return String(val ?? "");
+}
+
+/** Convert snake_case or technical field names to readable labels */
+function formatLabel(field: string): string {
+  return field
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Format cell value: numbers get Dutch formatting, rest stays as-is */
+function formatCell(val: unknown): string {
+  if (val == null) return "";
+  if (typeof val === "number") return formatNumber(val);
+  return String(val);
+}
+
 export default function KlipChart({ type: rawType, data, config }: KlipChartProps) {
   const type = typeMap[rawType] ?? rawType;
   const {
@@ -86,9 +112,7 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
     return (
       <div className="flex items-center justify-center h-full min-h-[80px]">
         <span className="text-3xl font-bold text-hero-grey-black">
-          {prefix}
-          {typeof val === "number" ? val.toLocaleString() : String(val)}
-          {suffix}
+          {prefix}{formatNumber(val)}{suffix}
         </span>
       </div>
     );
@@ -99,7 +123,7 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
       columns && columns.length > 0
         ? columns
         : data.length > 0
-          ? Object.keys(data[0]).map((k) => ({ key: k, label: k }))
+          ? Object.keys(data[0]).map((k) => ({ key: k, label: formatLabel(k) }))
           : [];
 
     return (
@@ -128,7 +152,7 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
                     key={col.key}
                     className="py-1.5 px-2 text-hero-grey-black"
                   >
-                    {String(row[col.key] ?? "")}
+                    {formatCell(row[col.key])}
                   </td>
                 ))}
               </tr>
@@ -138,6 +162,19 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
       </div>
     );
   }
+
+  const tooltipStyle = {
+    fontSize: 12,
+    borderRadius: 6,
+    border: "1px solid #D8D9DC",
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tooltipFormatter = (value: any, name: any) => [
+    formatNumber(value),
+    formatLabel(String(name ?? "")),
+  ];
+  const yAxisFormatter = (value: unknown) =>
+    typeof value === "number" ? value.toLocaleString("nl-NL", { notation: "compact" as const, maximumFractionDigits: 1 }) : String(value);
 
   if (type === "bar") {
     return (
@@ -154,16 +191,15 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
             tick={{ fontSize: 11, fill: "#9496A1" }}
             axisLine={false}
             tickLine={false}
+            tickFormatter={yAxisFormatter}
           />
           <Tooltip
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 6,
-              border: "1px solid #D8D9DC",
-            }}
+            contentStyle={tooltipStyle}
+            formatter={tooltipFormatter}
+            labelFormatter={(label) => String(label)}
           />
-          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} />}
-          <Bar dataKey={y_field} radius={[4, 4, 0, 0]}>
+          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} formatter={formatLabel} />}
+          <Bar dataKey={y_field} name={formatLabel(y_field)} radius={[4, 4, 0, 0]}>
             {data.map((_, i) => (
               <Cell key={i} fill={palette[i % palette.length]} />
             ))}
@@ -188,18 +224,18 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
             tick={{ fontSize: 11, fill: "#9496A1" }}
             axisLine={false}
             tickLine={false}
+            tickFormatter={yAxisFormatter}
           />
           <Tooltip
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 6,
-              border: "1px solid #D8D9DC",
-            }}
+            contentStyle={tooltipStyle}
+            formatter={tooltipFormatter}
+            labelFormatter={(label) => String(label)}
           />
-          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} formatter={formatLabel} />}
           <Line
             type="monotone"
             dataKey={y_field}
+            name={formatLabel(y_field)}
             stroke={palette[0]}
             strokeWidth={2}
             dot={{ r: 3, fill: palette[0] }}
@@ -225,18 +261,18 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
             tick={{ fontSize: 11, fill: "#9496A1" }}
             axisLine={false}
             tickLine={false}
+            tickFormatter={yAxisFormatter}
           />
           <Tooltip
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 6,
-              border: "1px solid #D8D9DC",
-            }}
+            contentStyle={tooltipStyle}
+            formatter={tooltipFormatter}
+            labelFormatter={(label) => String(label)}
           />
-          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} formatter={formatLabel} />}
           <Area
             type="monotone"
             dataKey={y_field}
+            name={formatLabel(y_field)}
             stroke={palette[0]}
             fill={palette[0]}
             fillOpacity={0.15}
@@ -252,13 +288,10 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Tooltip
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 6,
-              border: "1px solid #D8D9DC",
-            }}
+            contentStyle={tooltipStyle}
+            formatter={tooltipFormatter}
           />
-          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {show_legend && <Legend wrapperStyle={{ fontSize: 11 }} formatter={formatLabel} />}
           <Pie
             data={data}
             dataKey={y_field}

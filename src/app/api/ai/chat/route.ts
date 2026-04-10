@@ -67,7 +67,12 @@ Richtlijnen:
 - Stel verhelderende vragen over welke data de gebruiker wil zien
 - Stel geschikte grafiektypen voor op basis van de data
 - Gebruik altijd Nederlandse labels en beschrijvingen
-- Geef duidelijke uitleg bij elke stap`;
+- Geef duidelijke uitleg bij elke stap
+- Gebruik ALTIJD nette, leesbare namen voor klips (bijv. "Omzet per Klant" niet "omzet_per_klant")
+- Gebruik in config nette beschrijvingen, geen technische veldnamen met underscores
+- Getallen worden automatisch geformateerd met punten bij duizendtallen (1.000.000)
+- Begin altijd met het ophalen van beschikbare databronnen, dan een data preview, en maak dan pas een klip aan
+- Maak het werk altijd helemaal af: verken de data, maak de klip aan, en bevestig dat het klaar is`;
 
 const TOOLS: Anthropic.Messages.Tool[] = [
   {
