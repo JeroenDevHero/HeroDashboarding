@@ -1,7 +1,7 @@
 import {
   getKlipfolioTab,
   getKlipfolioTabKlipInstances,
-  getKlipfolioKlips,
+  getAllKlipfolioKlips,
   isKlipfolioConfigured,
 } from "@/lib/klipfolio/client";
 import Card from "@/components/ui/Card";
@@ -36,10 +36,10 @@ export default async function RebuildPage({
 
   try {
     // Fetch tab details and klip instances + all klips for the wizard
-    const [tab, tabKlipInstances, klipsResult] = await Promise.all([
+    const [tab, tabKlipInstances, allKlips] = await Promise.all([
       getKlipfolioTab(tabId),
       getKlipfolioTabKlipInstances(tabId),
-      getKlipfolioKlips(800),
+      getAllKlipfolioKlips(),
     ]);
 
     // IDs of klips on this tab
@@ -61,7 +61,7 @@ export default async function RebuildPage({
           tabId={tabId}
           tabName={tab.name}
           tabDescription={tab.description || ""}
-          klips={klipsResult.klips}
+          klips={allKlips}
           tabKlipIds={tabKlipIds}
         />
       </div>
