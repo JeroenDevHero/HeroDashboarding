@@ -29,8 +29,26 @@ interface KlipChartConfig {
   columns?: { key: string; label: string }[];
 }
 
+type ChartRenderType = "bar" | "line" | "pie" | "area" | "number" | "table";
+type DbKlipType = "bar_chart" | "line_chart" | "pie_chart" | "area_chart" | "number" | "table";
+
+/** Map DB enum values to render types */
+const typeMap: Record<string, ChartRenderType> = {
+  bar_chart: "bar",
+  line_chart: "line",
+  pie_chart: "pie",
+  area_chart: "area",
+  number: "number",
+  table: "table",
+  // Also accept the render types directly for backward compat
+  bar: "bar",
+  line: "line",
+  pie: "pie",
+  area: "area",
+};
+
 interface KlipChartProps {
-  type: "bar" | "line" | "pie" | "area" | "number" | "table";
+  type: DbKlipType | ChartRenderType;
   data: Record<string, unknown>[];
   config: KlipChartConfig;
 }
@@ -48,7 +66,8 @@ function getColors(custom?: string[]) {
   return custom && custom.length > 0 ? custom : CHART_COLORS;
 }
 
-export default function KlipChart({ type, data, config }: KlipChartProps) {
+export default function KlipChart({ type: rawType, data, config }: KlipChartProps) {
+  const type = typeMap[rawType] ?? rawType;
   const {
     x_field = "name",
     y_field = "value",

@@ -60,7 +60,7 @@ export default async function DashboardsPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <h3 className="text-sm font-semibold text-hero-grey-black truncate">
-                          {dashboard.title}
+                          {dashboard.name}
                         </h3>
                         {dashboard.description && (
                           <p className="mt-1 text-xs text-hero-grey-regular line-clamp-2">
@@ -68,8 +68,8 @@ export default async function DashboardsPage() {
                           </p>
                         )}
                       </div>
-                      {dashboard.is_public && (
-                        <Badge variant="success">Publiek</Badge>
+                      {dashboard.is_default && (
+                        <Badge variant="success">Standaard</Badge>
                       )}
                     </div>
 

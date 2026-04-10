@@ -17,17 +17,17 @@ export default function NewDashboardPage() {
 
         <Card>
           <form action={createDashboard} className="flex flex-col gap-5">
-            {/* Title */}
+            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <label
-                htmlFor="title"
+                htmlFor="name"
                 className="text-xs font-medium text-hero-grey-black"
               >
-                Titel <span className="text-red-500">*</span>
+                Naam <span className="text-red-500">*</span>
               </label>
               <input
-                id="title"
-                name="title"
+                id="name"
+                name="name"
                 type="text"
                 required
                 placeholder="Bijv. Verkoop overzicht"
@@ -50,23 +50,6 @@ export default function NewDashboardPage() {
                 placeholder="Optionele beschrijving van dit dashboard"
                 className="px-3 py-2 text-sm text-hero-grey-black bg-white border border-hero-grey-light rounded-[var(--radius-input)] placeholder:text-hero-grey-regular focus:outline-none focus:ring-2 focus:ring-hero-blue-medium/30 focus:border-hero-blue-medium transition-colors resize-none"
               />
-            </div>
-
-            {/* Public toggle */}
-            <div className="flex items-center gap-3">
-              <input
-                id="is_public"
-                name="is_public"
-                type="checkbox"
-                value="true"
-                className="h-4 w-4 rounded border-hero-grey-light text-hero-orange focus:ring-hero-orange/30 cursor-pointer"
-              />
-              <label
-                htmlFor="is_public"
-                className="text-xs font-medium text-hero-grey-black cursor-pointer"
-              >
-                Publiek zichtbaar
-              </label>
             </div>
 
             {/* Actions */}

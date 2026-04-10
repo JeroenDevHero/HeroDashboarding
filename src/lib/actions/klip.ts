@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import type { KlipType } from '@/lib/types';
 
 export async function getKlips() {
   const supabase = await createClient();
@@ -28,12 +29,7 @@ export async function getKlip(id: string) {
 
   const { data, error } = await supabase
     .from('klips')
-    .select(
-      `
-      *,
-      datasource:datasources (*)
-    `
-    )
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -42,12 +38,13 @@ export async function getKlip(id: string) {
 }
 
 export async function createKlip(data: {
-  title: string;
-  type: string;
+  name: string;
+  type: KlipType;
   description?: string;
   config?: object;
-  query?: string;
-  datasource_id?: string;
+  query_id?: string;
+  ai_prompt?: string;
+  ai_generated?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -58,12 +55,13 @@ export async function createKlip(data: {
   const { data: klip, error } = await supabase
     .from('klips')
     .insert({
-      title: data.title,
+      name: data.name,
       type: data.type,
       description: data.description || null,
       config: data.config || {},
-      query: data.query || null,
-      datasource_id: data.datasource_id || null,
+      query_id: data.query_id || null,
+      ai_prompt: data.ai_prompt || null,
+      ai_generated: data.ai_generated ?? false,
       created_by: user.id,
     })
     .select()
@@ -78,12 +76,12 @@ export async function createKlip(data: {
 export async function updateKlip(
   id: string,
   data: {
-    title?: string;
-    type?: string;
+    name?: string;
+    type?: KlipType;
     description?: string;
     config?: object;
-    query?: string;
-    datasource_id?: string;
+    query_id?: string;
+    ai_prompt?: string;
   }
 ) {
   const supabase = await createClient();
@@ -117,60 +115,4 @@ export async function deleteKlip(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath('/klips');
-}
-
-export async function refreshKlipData(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Niet ingelogd');
-
-  // Fetch the klip with its datasource
-  const { data: klip, error: klipError } = await supabase
-    .from('klips')
-    .select(
-      `
-      *,
-      datasource:datasources (*)
-    `
-    )
-    .eq('id', id)
-    .single();
-
-  if (klipError || !klip) throw new Error('Klip niet gevonden');
-  if (!klip.datasource) throw new Error('Geen datasource gekoppeld');
-  if (!klip.query) throw new Error('Geen query geconfigureerd');
-
-  // Execute the query against the datasource
-  // The actual execution depends on datasource type; for now we call
-  // a Supabase edge function that handles the various datasource types.
-  const { data: result, error: execError } = await supabase.functions.invoke(
-    'execute-query',
-    {
-      body: {
-        datasource_id: klip.datasource_id,
-        query: klip.query,
-        datasource_type: klip.datasource.type,
-        datasource_config: klip.datasource.config,
-      },
-    }
-  );
-
-  if (execError) throw new Error(`Query uitvoering mislukt: ${execError.message}`);
-
-  // Update cached data on the klip
-  const { error: updateError } = await supabase
-    .from('klips')
-    .update({
-      cached_data: result,
-      cached_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
-
-  if (updateError) throw new Error(updateError.message);
-
-  revalidatePath('/klips');
-  return result;
 }

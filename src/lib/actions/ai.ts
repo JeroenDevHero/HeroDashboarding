@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import type { ContextType } from '@/lib/types';
 
 export async function getConversations() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function getConversations() {
 
   const { data, error } = await supabase
     .from('ai_conversations')
-    .select('*')
+    .select('id, user_id, title, context_type, context_id, created_klip_ids, created_at, updated_at')
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false });
 
@@ -27,14 +28,10 @@ export async function getConversation(id: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
+  // Messages are stored as JSONB array in the ai_conversations row itself
   const { data, error } = await supabase
     .from('ai_conversations')
-    .select(
-      `
-      *,
-      ai_messages (*)
-    `
-    )
+    .select('*')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
@@ -43,7 +40,10 @@ export async function getConversation(id: string) {
   return data;
 }
 
-export async function createConversation() {
+export async function createConversation(
+  contextType: ContextType = 'klip_builder',
+  contextId?: string
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,6 +55,9 @@ export async function createConversation() {
     .insert({
       user_id: user.id,
       title: 'Nieuw gesprek',
+      context_type: contextType,
+      context_id: contextId || null,
+      messages: [],
     })
     .select()
     .single();
@@ -95,10 +98,10 @@ export async function saveMessage(
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  // Verify conversation ownership
+  // Fetch the current conversation to get existing messages
   const { data: conversation, error: convError } = await supabase
     .from('ai_conversations')
-    .select('id')
+    .select('messages')
     .eq('id', conversationId)
     .eq('user_id', user.id)
     .single();
@@ -106,25 +109,28 @@ export async function saveMessage(
   if (convError || !conversation)
     throw new Error('Gesprek niet gevonden');
 
-  const { data, error } = await supabase
-    .from('ai_messages')
-    .insert({
-      conversation_id: conversationId,
-      role,
-      content,
-      tool_calls: toolCalls || null,
+  // Build the new message
+  const newMessage = {
+    id: crypto.randomUUID(),
+    role,
+    content,
+    tool_calls: toolCalls || null,
+    created_at: new Date().toISOString(),
+  };
+
+  // Append to the existing messages JSONB array
+  const updatedMessages = [...(conversation.messages || []), newMessage];
+
+  const { error } = await supabase
+    .from('ai_conversations')
+    .update({
+      messages: updatedMessages,
+      updated_at: new Date().toISOString(),
     })
-    .select()
-    .single();
+    .eq('id', conversationId);
 
   if (error) throw new Error(error.message);
 
-  // Update conversation's updated_at timestamp
-  await supabase
-    .from('ai_conversations')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', conversationId);
-
   revalidatePath('/ai');
-  return data;
+  return newMessage;
 }

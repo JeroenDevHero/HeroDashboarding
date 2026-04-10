@@ -1,9 +1,29 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/** Valid klip_type enum values matching the Postgres enum */
+export type KlipType =
+  | "kpi_tile"
+  | "bar_chart"
+  | "line_chart"
+  | "area_chart"
+  | "pie_chart"
+  | "gauge"
+  | "table"
+  | "sparkline"
+  | "scatter_chart"
+  | "funnel"
+  | "map"
+  | "number_comparison"
+  | "progress_bar"
+  | "heatmap"
+  | "combo_chart"
+  | "text_widget"
+  | "iframe";
+
 export interface CreateKlipInput {
-  title: string;
-  type: "bar" | "line" | "pie" | "area" | "number" | "table";
-  description: string;
+  name: string;
+  type: KlipType;
+  description?: string;
   config?: {
     x_field?: string;
     y_field?: string;
@@ -12,33 +32,46 @@ export interface CreateKlipInput {
     show_legend?: boolean;
     show_grid?: boolean;
   };
-  query?: string;
-  datasource_id?: string;
+  query_id?: string;
+  ai_prompt?: string;
 }
 
 export interface PreviewDataInput {
   query: string;
-  datasource_id?: string;
+  data_source_id?: string;
   limit?: number;
 }
 
 export async function executeCreateKlip(
   input: CreateKlipInput,
-  userId: string
+  userId: string,
+  conversationId?: string
 ) {
   const supabase = createAdminClient();
 
+  const insertData: Record<string, unknown> = {
+    name: input.name,
+    type: input.type,
+    description: input.description || null,
+    config: input.config || {},
+    created_by: userId,
+    ai_generated: true,
+    ai_prompt: input.ai_prompt || null,
+  };
+
+  // Only set query_id if provided (it's a FK to data_source_queries)
+  if (input.query_id) {
+    insertData.query_id = input.query_id;
+  }
+
+  // Link to AI conversation if available
+  if (conversationId) {
+    insertData.ai_conversation_id = conversationId;
+  }
+
   const { data: klip, error } = await supabase
     .from("klips")
-    .insert({
-      title: input.title,
-      type: input.type,
-      description: input.description || null,
-      config: input.config || {},
-      query: input.query || null,
-      datasource_id: input.datasource_id || null,
-      user_id: userId,
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -56,18 +89,20 @@ export async function executePreviewData(
   const supabase = createAdminClient();
   const limit = input.limit ?? 10;
 
-  // If a datasource_id is provided, fetch the datasource config and execute
-  // against that source. For now, we execute SQL directly via Supabase's
-  // rpc or raw query capabilities using the admin client.
-  if (input.datasource_id) {
-    const { data: datasource, error: dsError } = await supabase
-      .from("datasources")
-      .select("*")
-      .eq("id", input.datasource_id)
+  // If a data_source_id is provided, verify the data source exists
+  if (input.data_source_id) {
+    const { data: dataSource, error: dsError } = await supabase
+      .from("data_sources")
+      .select("id, name, is_active")
+      .eq("id", input.data_source_id)
       .single();
 
-    if (dsError || !datasource) {
+    if (dsError || !dataSource) {
       throw new Error("Databron niet gevonden");
+    }
+
+    if (!dataSource.is_active) {
+      throw new Error("Databron is niet actief");
     }
   }
 
@@ -80,8 +115,6 @@ export async function executePreviewData(
   });
 
   if (error) {
-    // Fallback: try direct query if the RPC function doesn't exist
-    // This allows preview even without the custom function
     throw new Error(`Query uitvoering mislukt: ${error.message}`);
   }
 
@@ -95,10 +128,13 @@ export async function executePreviewData(
 export async function executeListDatasources(userId: string) {
   const supabase = createAdminClient();
 
+  // Query data_sources joined with data_source_types for type info
   const { data, error } = await supabase
-    .from("datasources")
-    .select("id, name, type, created_at, updated_at")
-    .eq("user_id", userId)
+    .from("data_sources")
+    .select(
+      "id, name, is_active, last_refresh_status, created_at, updated_at, data_source_types(id, name, slug)"
+    )
+    .eq("created_by", userId)
     .order("name");
 
   if (error) {

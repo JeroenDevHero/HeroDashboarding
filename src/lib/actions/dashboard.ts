@@ -53,16 +53,14 @@ export async function createDashboard(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  const title = formData.get('title') as string;
+  const name = formData.get('name') as string;
   const description = formData.get('description') as string | null;
-  const isPublic = formData.get('is_public') === 'true';
 
   const { data, error } = await supabase
     .from('dashboards')
     .insert({
-      title,
+      name,
       description: description || null,
-      is_public: isPublic,
       created_by: user.id,
     })
     .select()
@@ -81,16 +79,14 @@ export async function updateDashboard(id: string, formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  const title = formData.get('title') as string;
+  const name = formData.get('name') as string;
   const description = formData.get('description') as string | null;
-  const isPublic = formData.get('is_public') === 'true';
 
   const { error } = await supabase
     .from('dashboards')
     .update({
-      title,
+      name,
       description: description || null,
-      is_public: isPublic,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -124,7 +120,10 @@ export async function updateDashboardLayout(
   id: string,
   layouts: {
     klip_id: string;
-    layout: { x: number; y: number; w: number; h: number };
+    position_x: number;
+    position_y: number;
+    width: number;
+    height: number;
   }[]
 ) {
   const supabase = await createClient();
@@ -147,10 +146,10 @@ export async function updateDashboardLayout(
   const upserts = layouts.map((item) => ({
     dashboard_id: id,
     klip_id: item.klip_id,
-    position_x: item.layout.x,
-    position_y: item.layout.y,
-    width: item.layout.w,
-    height: item.layout.h,
+    position_x: item.position_x,
+    position_y: item.position_y,
+    width: item.width,
+    height: item.height,
   }));
 
   const { error } = await supabase
@@ -187,8 +186,8 @@ export async function addKlipToDashboard(
     klip_id: klipId,
     position_x: 0,
     position_y: 0,
-    width: 6,
-    height: 4,
+    width: 4,
+    height: 3,
   });
 
   if (error) throw new Error(error.message);

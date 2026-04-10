@@ -7,7 +7,7 @@ import { updateUserRole } from "@/lib/actions/profile";
 interface Profile {
   id: string;
   email?: string | null;
-  full_name?: string | null;
+  display_name?: string | null;
   role: string;
   created_at?: string | null;
 }
@@ -95,7 +95,7 @@ export default function AdminUserTable({
               >
                 <td className="py-3 pr-4">
                   <span className="font-medium text-hero-grey-black">
-                    {p.full_name || "Onbekend"}
+                    {p.display_name || "Onbekend"}
                   </span>
                   {isCurrentUser && (
                     <span className="ml-2 text-[11px] text-hero-grey-regular">

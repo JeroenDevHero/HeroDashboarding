@@ -30,11 +30,13 @@ interface KlipConfig {
 
 interface Klip {
   id: string;
-  title: string;
-  type: 'bar' | 'line' | 'pie' | 'area' | 'number' | 'table';
+  name: string;
+  type: 'bar_chart' | 'line_chart' | 'pie_chart' | 'area_chart' | 'number' | 'table';
   description?: string;
-  cached_data?: Record<string, unknown>[] | null;
   config: KlipConfig;
+  query_id?: string | null;
+  ai_generated?: boolean;
+  is_template?: boolean;
 }
 
 interface DashboardKlip {
@@ -50,12 +52,15 @@ interface DashboardKlip {
 
 interface Dashboard {
   id: string;
-  title: string;
+  name: string;
   description?: string;
-  is_public: boolean;
+  is_default: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
+  layout_config?: Record<string, unknown> | null;
+  theme?: string | null;
+  auto_refresh_seconds?: number | null;
   dashboard_klips: DashboardKlip[];
 }
 
@@ -108,7 +113,10 @@ export default function DashboardEditor({
     const layouts = (currentLayout as unknown as { i: string; x: number; y: number; w: number; h: number }[]).map(
       (item) => ({
         klip_id: item.i,
-        layout: { x: item.x, y: item.y, w: item.w, h: item.h },
+        position_x: item.x,
+        position_y: item.y,
+        width: item.w,
+        height: item.h,
       })
     );
 
@@ -147,9 +155,9 @@ export default function DashboardEditor({
         <div className="min-w-0">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold text-hero-grey-black truncate">
-              {dashboard.title}
+              {dashboard.name}
             </h1>
-            {dashboard.is_public && <Badge variant="success">Publiek</Badge>}
+            {dashboard.is_default && <Badge variant="success">Standaard</Badge>}
           </div>
           {dashboard.description && (
             <p className="mt-1 text-sm text-hero-grey-regular">
@@ -254,7 +262,7 @@ export default function DashboardEditor({
                   key={dk.klip_id}
                   className="inline-flex items-center gap-2 rounded-full bg-hero-blue-hairline px-3 py-1.5 text-xs text-hero-grey-black"
                 >
-                  <span>{dk.klip.title}</span>
+                  <span>{dk.klip.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveKlip(dk.klip_id)}
@@ -295,7 +303,7 @@ export default function DashboardEditor({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-hero-grey-black truncate">
-                      {klip.title}
+                      {klip.name}
                     </span>
                     <Badge variant="info">{klip.type}</Badge>
                   </div>
@@ -336,7 +344,7 @@ export default function DashboardEditor({
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-hero-grey-regular">
-            Weet je zeker dat je het dashboard &ldquo;{dashboard.title}&rdquo;
+            Weet je zeker dat je het dashboard &ldquo;{dashboard.name}&rdquo;
             wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
           </p>
           <div className="flex items-center justify-end gap-3">

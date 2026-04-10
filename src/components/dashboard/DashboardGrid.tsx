@@ -23,10 +23,9 @@ interface KlipConfig {
 
 interface Klip {
   id: string;
-  title: string;
-  type: "bar" | "line" | "pie" | "area" | "number" | "table";
+  name: string;
+  type: "bar_chart" | "line_chart" | "pie_chart" | "area_chart" | "number" | "table";
   description?: string;
-  cached_data?: Record<string, unknown>[] | null;
   config: KlipConfig;
 }
 

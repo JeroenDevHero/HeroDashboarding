@@ -19,10 +19,9 @@ interface KlipConfig {
 
 interface Klip {
   id: string;
-  title: string;
-  type: "bar" | "line" | "pie" | "area" | "number" | "table";
+  name: string;
+  type: "bar_chart" | "line_chart" | "pie_chart" | "area_chart" | "number" | "table";
   description?: string;
-  cached_data?: Record<string, unknown>[] | null;
   config: KlipConfig;
 }
 
@@ -33,16 +32,26 @@ interface KlipCardProps {
 }
 
 const typeBadgeVariant: Record<string, "info" | "success" | "warning" | "error"> = {
-  bar: "info",
-  line: "info",
-  pie: "success",
-  area: "info",
+  bar_chart: "info",
+  line_chart: "info",
+  pie_chart: "success",
+  area_chart: "info",
   number: "warning",
   table: "success",
 };
 
+/** Map DB enum type to chart render type */
+const chartTypeMap: Record<string, "bar" | "line" | "pie" | "area" | "number" | "table"> = {
+  bar_chart: "bar",
+  line_chart: "line",
+  pie_chart: "pie",
+  area_chart: "area",
+  number: "number",
+  table: "table",
+};
+
 export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
-  const hasData = klip.cached_data && klip.cached_data.length > 0;
+  const renderType = chartTypeMap[klip.type] ?? "bar";
 
   const headerAction = (
     <div className="flex items-center gap-1">
@@ -58,27 +67,17 @@ export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
 
   return (
     <Card
-      title={klip.title}
+      title={klip.name}
       subtitle={klip.description}
       headerAction={headerAction}
       className="h-full flex flex-col"
     >
       <div className="flex-1 min-h-0">
-        {hasData ? (
-          <div className="h-full min-h-[120px]">
-            <KlipChart
-              type={klip.type}
-              data={klip.cached_data!}
-              config={klip.config}
-            />
-          </div>
-        ) : (
-          <EmptyState
-            icon="bar_chart"
-            title="No data yet"
-            description="Connect a data source or run a query to populate this klip."
-          />
-        )}
+        <EmptyState
+          icon="bar_chart"
+          title="Geen data"
+          description="Koppel een databron en voer een query uit om deze klip te vullen."
+        />
       </div>
     </Card>
   );

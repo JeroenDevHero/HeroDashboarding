@@ -11,7 +11,7 @@ export async function getCurrentProfile() {
   if (!user) throw new Error('Niet ingelogd');
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('*')
     .eq('id', user.id)
     .single();
@@ -27,16 +27,34 @@ export async function updateProfile(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  const fullName = formData.get('full_name') as string | null;
+  const displayName = formData.get('display_name') as string | null;
   const avatarUrl = formData.get('avatar_url') as string | null;
 
   const { error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .update({
-      full_name: fullName || null,
+      display_name: displayName || null,
       avatar_url: avatarUrl || null,
-      updated_at: new Date().toISOString(),
     })
+    .eq('id', user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/settings');
+}
+
+export async function updateProfilePreferences(
+  preferences: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ preferences })
     .eq('id', user.id);
 
   if (error) throw new Error(error.message);
@@ -53,7 +71,7 @@ export async function getAllProfiles() {
 
   // Verify admin role
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -62,7 +80,7 @@ export async function getAllProfiles() {
   if (profile.role !== 'admin') throw new Error('Geen admin rechten');
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('*')
     .order('created_at', { ascending: false });
 
@@ -79,7 +97,7 @@ export async function updateUserRole(userId: string, role: string) {
 
   // Verify admin role
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -94,11 +112,8 @@ export async function updateUserRole(userId: string, role: string) {
   if (!validRoles.includes(role)) throw new Error('Ongeldige rol');
 
   const { error } = await supabase
-    .from('profiles')
-    .update({
-      role,
-      updated_at: new Date().toISOString(),
-    })
+    .from('user_profiles')
+    .update({ role })
     .eq('id', userId);
 
   if (error) throw new Error(error.message);

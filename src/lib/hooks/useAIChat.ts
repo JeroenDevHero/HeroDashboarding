@@ -36,7 +36,7 @@ function generateId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function useAIChat() {
+export function useAIChat(conversationId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -89,7 +89,7 @@ export function useAIChat() {
         const response = await fetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: apiMessages }),
+          body: JSON.stringify({ messages: apiMessages, conversationId }),
           signal: abortControllerRef.current.signal,
         });
 
@@ -218,7 +218,7 @@ export function useAIChat() {
         abortControllerRef.current = null;
       }
     },
-    [messages, isLoading]
+    [messages, isLoading, conversationId]
   );
 
   const clearMessages = useCallback(() => {

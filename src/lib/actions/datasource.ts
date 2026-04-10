@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
-export async function getDatasources() {
+export async function getDataSources() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,15 +12,20 @@ export async function getDatasources() {
   if (!user) throw new Error('Niet ingelogd');
 
   const { data, error } = await supabase
-    .from('datasources')
-    .select('*')
+    .from('data_sources')
+    .select(
+      `
+      *,
+      data_source_type:data_source_types (*)
+    `
+    )
     .order('name', { ascending: true });
 
   if (error) throw new Error(error.message);
   return data;
 }
 
-export async function getDatasource(id: string) {
+export async function getDataSource(id: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,8 +33,13 @@ export async function getDatasource(id: string) {
   if (!user) throw new Error('Niet ingelogd');
 
   const { data, error } = await supabase
-    .from('datasources')
-    .select('*')
+    .from('data_sources')
+    .select(
+      `
+      *,
+      data_source_type:data_source_types (*)
+    `
+    )
     .eq('id', id)
     .single();
 
@@ -37,29 +47,44 @@ export async function getDatasource(id: string) {
   return data;
 }
 
-export async function createDatasource(formData: FormData) {
+export async function getDataSourceTypes() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  const name = formData.get('name') as string;
-  const type = formData.get('type') as string;
-  const description = formData.get('description') as string | null;
-
-  // Parse type-specific configuration from formData
-  const config = parseConfigFromFormData(type, formData);
-
   const { data, error } = await supabase
-    .from('datasources')
+    .from('data_source_types')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function createDataSource(data: {
+  name: string;
+  type_id: string;
+  description?: string;
+  connection_config: Record<string, unknown>;
+  refresh_interval_seconds?: number;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const { data: dataSource, error } = await supabase
+    .from('data_sources')
     .insert({
-      name,
-      type,
-      description: description || null,
-      config,
+      name: data.name,
+      type_id: data.type_id,
+      description: data.description || null,
+      connection_config: data.connection_config,
+      refresh_interval_seconds: data.refresh_interval_seconds ?? 3600,
       created_by: user.id,
-      status: 'pending',
     })
     .select()
     .single();
@@ -67,29 +92,30 @@ export async function createDatasource(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath('/datasources');
-  return data;
+  return dataSource;
 }
 
-export async function updateDatasource(id: string, formData: FormData) {
+export async function updateDataSource(
+  id: string,
+  data: {
+    name?: string;
+    type_id?: string;
+    description?: string;
+    connection_config?: Record<string, unknown>;
+    refresh_interval_seconds?: number;
+    is_active?: boolean;
+  }
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  const name = formData.get('name') as string;
-  const type = formData.get('type') as string;
-  const description = formData.get('description') as string | null;
-
-  const config = parseConfigFromFormData(type, formData);
-
   const { error } = await supabase
-    .from('datasources')
+    .from('data_sources')
     .update({
-      name,
-      type,
-      description: description || null,
-      config,
+      ...data,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -100,7 +126,7 @@ export async function updateDatasource(id: string, formData: FormData) {
   revalidatePath('/datasources');
 }
 
-export async function deleteDatasource(id: string) {
+export async function deleteDataSource(id: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -108,7 +134,7 @@ export async function deleteDatasource(id: string) {
   if (!user) throw new Error('Niet ingelogd');
 
   const { error } = await supabase
-    .from('datasources')
+    .from('data_sources')
     .delete()
     .eq('id', id)
     .eq('created_by', user.id);
@@ -119,46 +145,52 @@ export async function deleteDatasource(id: string) {
   redirect('/datasources');
 }
 
-export async function testDatasourceConnection(id: string) {
+export async function testDataSourceConnection(id: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  // Fetch the datasource
-  const { data: datasource, error: fetchError } = await supabase
-    .from('datasources')
-    .select('*')
+  // Fetch the data source with its type
+  const { data: dataSource, error: fetchError } = await supabase
+    .from('data_sources')
+    .select(
+      `
+      *,
+      data_source_type:data_source_types (*)
+    `
+    )
     .eq('id', id)
     .eq('created_by', user.id)
     .single();
 
-  if (fetchError || !datasource) throw new Error('Datasource niet gevonden');
+  if (fetchError || !dataSource) throw new Error('Databron niet gevonden');
 
   // Test the connection via edge function
   const { data: result, error: testError } = await supabase.functions.invoke(
     'test-datasource',
     {
       body: {
-        datasource_id: datasource.id,
-        type: datasource.type,
-        config: datasource.config,
+        datasource_id: dataSource.id,
+        type_slug: dataSource.data_source_type?.slug,
+        connection_config: dataSource.connection_config,
       },
     }
   );
 
-  const newStatus = testError ? 'error' : 'connected';
+  const newStatus = testError ? 'error' : 'success';
   const statusMessage = testError
     ? `Verbinding mislukt: ${testError.message}`
     : 'Verbinding succesvol';
 
-  // Update the datasource status
+  // Update the data source status
   const { error: updateError } = await supabase
-    .from('datasources')
+    .from('data_sources')
     .update({
-      status: newStatus,
-      last_tested_at: new Date().toISOString(),
+      last_refresh_status: newStatus,
+      last_refresh_at: new Date().toISOString(),
+      last_refresh_error: testError ? testError.message : null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);
@@ -168,61 +200,4 @@ export async function testDatasourceConnection(id: string) {
   revalidatePath('/datasources');
 
   return { status: newStatus, message: statusMessage, details: result };
-}
-
-/**
- * Parse type-specific datasource configuration from FormData.
- */
-function parseConfigFromFormData(
-  type: string,
-  formData: FormData
-): Record<string, unknown> {
-  switch (type) {
-    case 'postgresql':
-    case 'mysql':
-      return {
-        host: formData.get('host') as string,
-        port: Number(formData.get('port')) || (type === 'postgresql' ? 5432 : 3306),
-        database: formData.get('database') as string,
-        username: formData.get('username') as string,
-        password: formData.get('password') as string,
-        ssl: formData.get('ssl') === 'true',
-      };
-    case 'rest_api':
-      return {
-        base_url: formData.get('base_url') as string,
-        auth_type: formData.get('auth_type') as string,
-        api_key: formData.get('api_key') as string | null,
-        headers: parseJsonField(formData.get('headers') as string),
-      };
-    case 'google_sheets':
-      return {
-        spreadsheet_id: formData.get('spreadsheet_id') as string,
-        sheet_name: formData.get('sheet_name') as string | null,
-        credentials: parseJsonField(formData.get('credentials') as string),
-      };
-    case 'csv':
-      return {
-        url: formData.get('url') as string | null,
-        delimiter: (formData.get('delimiter') as string) || ',',
-      };
-    default:
-      // Generic: collect all config_* fields
-      const config: Record<string, unknown> = {};
-      formData.forEach((value, key) => {
-        if (key.startsWith('config_')) {
-          config[key.replace('config_', '')] = value;
-        }
-      });
-      return config;
-  }
-}
-
-function parseJsonField(value: string | null): unknown {
-  if (!value) return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
 }

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   executeCreateKlip,
   executePreviewData,
@@ -8,12 +9,58 @@ import {
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Persist the conversation messages to ai_conversations.messages (JSONB).
+ * Creates a new row if no conversationId is provided, otherwise upserts.
+ */
+async function persistConversation(
+  userId: string,
+  conversationId: string | undefined,
+  messages: { role: string; content: string }[],
+  createdKlipIds: string[] = []
+) {
+  const supabase = createAdminClient();
+
+  const messagesJsonb = messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+    timestamp: new Date().toISOString(),
+  }));
+
+  if (conversationId) {
+    // Update existing conversation
+    const updateData: Record<string, unknown> = {
+      messages: messagesJsonb,
+      updated_at: new Date().toISOString(),
+    };
+    if (createdKlipIds.length > 0) {
+      updateData.created_klip_ids = createdKlipIds;
+    }
+    await supabase
+      .from("ai_conversations")
+      .update(updateData)
+      .eq("id", conversationId)
+      .eq("user_id", userId);
+  } else {
+    // Create new conversation
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      messages: messagesJsonb,
+      context_type: "klip_builder",
+    };
+    if (createdKlipIds.length > 0) {
+      insertData.created_klip_ids = createdKlipIds;
+    }
+    await supabase.from("ai_conversations").insert(insertData);
+  }
+}
+
 const SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips).
 
 Mogelijkheden:
-- Maak staafdiagrammen, lijndiagrammen, taartdiagrammen, vlakdiagrammen, cijfer-widgets en tabellen
-- Bekijk beschikbare databronnen
-- Preview data met SQL queries
+- Maak staafdiagrammen, lijndiagrammen, taartdiagrammen, vlakdiagrammen, KPI-tegels, tabellen en meer
+- Bekijk beschikbare databronnen (data_sources)
+- Preview data via queries
 - Maak klips aan op basis van data
 
 Richtlijnen:
@@ -26,19 +73,37 @@ const TOOLS: Anthropic.Messages.Tool[] = [
   {
     name: "create_klip",
     description:
-      "Maakt een nieuwe visualisatie-klip aan op het dashboard. Gebruik dit wanneer de gebruiker een grafiek, tabel of cijfer-widget wil maken.",
+      "Maakt een nieuwe visualisatie-klip aan op het dashboard. Gebruik dit wanneer de gebruiker een grafiek, tabel of KPI-tegel wil maken. De klip wordt opgeslagen met name, type, en config in de klips tabel.",
     input_schema: {
       type: "object" as const,
       properties: {
-        title: {
+        name: {
           type: "string",
-          description: "De titel van de klip",
+          description: "De naam van de klip",
         },
         type: {
           type: "string",
-          enum: ["bar", "line", "pie", "area", "number", "table"],
+          enum: [
+            "kpi_tile",
+            "bar_chart",
+            "line_chart",
+            "area_chart",
+            "pie_chart",
+            "gauge",
+            "table",
+            "sparkline",
+            "scatter_chart",
+            "funnel",
+            "map",
+            "number_comparison",
+            "progress_bar",
+            "heatmap",
+            "combo_chart",
+            "text_widget",
+            "iframe",
+          ],
           description:
-            "Het type visualisatie: bar (staafdiagram), line (lijndiagram), pie (taartdiagram), area (vlakdiagram), number (cijfer-widget), table (tabel)",
+            "Het type visualisatie: bar_chart (staafdiagram), line_chart (lijndiagram), pie_chart (taartdiagram), area_chart (vlakdiagram), kpi_tile (KPI-tegel), table (tabel), gauge, sparkline, scatter_chart, funnel, map, number_comparison, progress_bar, heatmap, combo_chart, text_widget, iframe",
         },
         description: {
           type: "string",
@@ -46,7 +111,7 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         },
         config: {
           type: "object",
-          description: "Configuratie voor de visualisatie",
+          description: "Configuratie voor de visualisatie (opgeslagen als JSONB)",
           properties: {
             x_field: {
               type: "string",
@@ -75,22 +140,24 @@ const TOOLS: Anthropic.Messages.Tool[] = [
             },
           },
         },
-        query: {
+        query_id: {
           type: "string",
-          description: "SQL query om data op te halen voor de klip",
+          description:
+            "UUID van een bestaande data_source_query om aan de klip te koppelen (optioneel)",
         },
-        datasource_id: {
+        ai_prompt: {
           type: "string",
-          description: "ID van de databron (optioneel)",
+          description:
+            "Het originele AI-prompt dat tot deze klip leidde (wordt automatisch ingevuld)",
         },
       },
-      required: ["title", "type", "description"],
+      required: ["name", "type"],
     },
   },
   {
     name: "preview_data",
     description:
-      "Bekijk een voorbeeld van data uit een SQL query. Gebruik dit om data te verkennen voordat je een klip aanmaakt.",
+      "Bekijk een voorbeeld van data uit een query. Gebruik dit om data te verkennen voordat je een klip aanmaakt.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -98,9 +165,9 @@ const TOOLS: Anthropic.Messages.Tool[] = [
           type: "string",
           description: "SQL query om uit te voeren",
         },
-        datasource_id: {
+        data_source_id: {
           type: "string",
-          description: "ID van de databron (optioneel)",
+          description: "UUID van de data_source om tegen te queryen (optioneel)",
         },
         limit: {
           type: "number",
@@ -113,7 +180,7 @@ const TOOLS: Anthropic.Messages.Tool[] = [
   {
     name: "list_datasources",
     description:
-      "Toon alle beschikbare databronnen van de gebruiker. Gebruik dit om te zien welke databronnen er zijn.",
+      "Toon alle beschikbare databronnen (data_sources) van de gebruiker. Gebruik dit om te zien welke databronnen er zijn.",
     input_schema: {
       type: "object" as const,
       properties: {},
@@ -138,7 +205,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, conversationId: _conversationId } = body as {
+    const { messages, conversationId } = body as {
       messages: { role: string; content: string }[];
       conversationId?: string;
     };
@@ -179,6 +246,9 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
+        const createdKlipIds: string[] = [];
+        const allMessages = [...messages]; // Track messages for persistence
+
         try {
           for await (const event of stream) {
             controller.enqueue(
@@ -211,8 +281,19 @@ export async function POST(request: Request) {
                           toolBlock.input as Parameters<
                             typeof executeCreateKlip
                           >[0],
-                          user.id
+                          user.id,
+                          conversationId
                         );
+                        // Track created klip IDs for conversation persistence
+                        if (
+                          result &&
+                          typeof result === "object" &&
+                          "id" in (result as Record<string, unknown>)
+                        ) {
+                          createdKlipIds.push(
+                            (result as Record<string, unknown>).id as string
+                          );
+                        }
                         break;
                       case "preview_data":
                         result = await executePreviewData(
@@ -263,16 +344,56 @@ export async function POST(request: Request) {
                   messages: continuationMessages,
                 });
 
+                let continuationText = "";
                 for await (const contEvent of continuationStream) {
                   controller.enqueue(
                     encoder.encode(
                       `data: ${JSON.stringify(contEvent)}\n\n`
                     )
                   );
+                  // Collect final assistant text for persistence
+                  if (
+                    contEvent.type === "content_block_delta" &&
+                    "delta" in contEvent &&
+                    contEvent.delta.type === "text_delta" &&
+                    "text" in contEvent.delta
+                  ) {
+                    continuationText += contEvent.delta.text;
+                  }
+                }
+
+                // Add assistant response to messages for persistence
+                if (continuationText) {
+                  allMessages.push({
+                    role: "assistant",
+                    content: continuationText,
+                  });
+                }
+              } else {
+                // No tool use - collect the text content for persistence
+                const textBlocks = finalMessage.content.filter(
+                  (block): block is Anthropic.Messages.TextBlock =>
+                    block.type === "text"
+                );
+                if (textBlocks.length > 0) {
+                  allMessages.push({
+                    role: "assistant",
+                    content: textBlocks.map((b) => b.text).join(""),
+                  });
                 }
               }
             }
           }
+
+          // Persist conversation to ai_conversations table
+          persistConversation(
+            user.id,
+            conversationId,
+            allMessages,
+            createdKlipIds
+          ).catch((err) => {
+            console.error("Failed to persist AI conversation:", err);
+          });
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();

@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { getDatasources } from "@/lib/actions/datasource";
+import { getDataSources } from "@/lib/actions/datasource";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import DatasourceList from "./DatasourceList";
 
 export default async function DataSourcesPage() {
-  const datasources = await getDatasources();
+  const datasources = await getDataSources();
 
   return (
     <div>

@@ -5,17 +5,20 @@ import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { testDatasourceConnection, deleteDatasource } from "@/lib/actions/datasource";
+import { testDataSourceConnection, deleteDataSource } from "@/lib/actions/datasource";
 
 interface Datasource {
   id: string;
   name: string;
-  type: string;
+  type_id: string;
   description?: string | null;
-  status: string;
-  last_tested_at?: string | null;
+  is_active: boolean;
+  last_refresh_status?: string | null;
+  last_refresh_at?: string | null;
+  connection_config?: Record<string, unknown> | null;
   updated_at?: string | null;
   created_at?: string | null;
+  data_source_type?: { id: string; name: string; slug: string } | null;
 }
 
 interface DatasourceListProps {
@@ -31,13 +34,13 @@ const typeLabels: Record<string, string> = {
 };
 
 const statusVariant: Record<string, "info" | "success" | "warning" | "error"> = {
-  connected: "success",
+  success: "success",
   pending: "warning",
   error: "error",
 };
 
 const statusLabels: Record<string, string> = {
-  connected: "Verbonden",
+  success: "Verbonden",
   pending: "In afwachting",
   error: "Fout",
 };
@@ -52,7 +55,7 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
   async function handleTest(id: string) {
     setTestingId(id);
     try {
-      const result = await testDatasourceConnection(id);
+      const result = await testDataSourceConnection(id);
       setTestResult((prev) => ({
         ...prev,
         [id]: { status: result.status, message: result.message },
@@ -75,7 +78,7 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
     if (!deleteId) return;
     setDeleting(true);
     try {
-      await deleteDatasource(deleteId);
+      await deleteDataSource(deleteId);
     } catch {
       setDeleting(false);
       setDeleteId(null);
@@ -123,17 +126,24 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
                 </td>
                 <td className="px-5 py-3">
                   <Badge variant="info">
-                    {typeLabels[ds.type] || ds.type}
+                    {ds.data_source_type?.name || typeLabels[ds.type_id] || ds.type_id}
                   </Badge>
                 </td>
                 <td className="px-5 py-3">
-                  <Badge variant={statusVariant[ds.status] ?? "warning"}>
-                    {statusLabels[ds.status] || ds.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusVariant[ds.last_refresh_status ?? "pending"] ?? "warning"}>
+                      {statusLabels[ds.last_refresh_status ?? "pending"] || ds.last_refresh_status || "Onbekend"}
+                    </Badge>
+                    {ds.is_active ? (
+                      <span className="text-[11px] text-emerald-600">Actief</span>
+                    ) : (
+                      <span className="text-[11px] text-hero-grey-regular">Inactief</span>
+                    )}
+                  </div>
                   {testResult[ds.id] && (
                     <p
                       className={`mt-1 text-[11px] ${
-                        testResult[ds.id].status === "connected"
+                        testResult[ds.id].status === "success"
                           ? "text-emerald-600"
                           : "text-red-500"
                       }`}
@@ -143,8 +153,8 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
                   )}
                 </td>
                 <td className="px-5 py-3 text-hero-grey-regular">
-                  {ds.last_tested_at
-                    ? new Date(ds.last_tested_at).toLocaleString("nl-NL")
+                  {ds.last_refresh_at
+                    ? new Date(ds.last_refresh_at).toLocaleString("nl-NL")
                     : "Nog niet getest"}
                 </td>
                 <td className="px-5 py-3">

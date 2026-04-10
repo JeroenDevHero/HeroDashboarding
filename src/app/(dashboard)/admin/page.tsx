@@ -18,7 +18,7 @@ export default async function AdminPage() {
   const [dashboardsRes, klipsRes, datasourcesRes] = await Promise.all([
     supabase.from("dashboards").select("id", { count: "exact", head: true }),
     supabase.from("klips").select("id", { count: "exact", head: true }),
-    supabase.from("datasources").select("id", { count: "exact", head: true }),
+    supabase.from("data_sources").select("id", { count: "exact", head: true }),
   ]);
 
   const stats = [

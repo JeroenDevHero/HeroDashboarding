@@ -6,7 +6,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
-import { createDatasource } from "@/lib/actions/datasource";
+import { createDataSource } from "@/lib/actions/datasource";
 
 const datasourceTypes = [
   {
@@ -50,8 +50,15 @@ export default function NewDatasourcePage() {
 
     try {
       const formData = new FormData(e.currentTarget);
-      formData.set("type", selectedType);
-      await createDatasource(formData);
+      const name = formData.get("name") as string;
+      const description = formData.get("description") as string | null;
+      const connection_config = parseConfigFromForm(selectedType, formData);
+      await createDataSource({
+        name,
+        type_id: selectedType,
+        description: description || undefined,
+        connection_config,
+      });
       router.push("/datasources");
     } catch (err) {
       setError(
@@ -295,4 +302,51 @@ function CsvFields() {
       />
     </>
   );
+}
+
+function parseJsonField(value: string | null): unknown {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function parseConfigFromForm(
+  type: string,
+  formData: FormData
+): Record<string, unknown> {
+  switch (type) {
+    case "postgresql":
+    case "mysql":
+      return {
+        host: formData.get("host") as string,
+        port: Number(formData.get("port")) || (type === "postgresql" ? 5432 : 3306),
+        database: formData.get("database") as string,
+        username: formData.get("username") as string,
+        password: formData.get("password") as string,
+        ssl: formData.get("ssl") === "true",
+      };
+    case "rest_api":
+      return {
+        base_url: formData.get("base_url") as string,
+        auth_type: formData.get("auth_type") as string,
+        api_key: formData.get("api_key") as string | null,
+        headers: parseJsonField(formData.get("headers") as string),
+      };
+    case "google_sheets":
+      return {
+        spreadsheet_id: formData.get("spreadsheet_id") as string,
+        sheet_name: formData.get("sheet_name") as string | null,
+        credentials: parseJsonField(formData.get("credentials") as string),
+      };
+    case "csv":
+      return {
+        url: formData.get("url") as string | null,
+        delimiter: (formData.get("delimiter") as string) || ",",
+      };
+    default:
+      return {};
+  }
 }

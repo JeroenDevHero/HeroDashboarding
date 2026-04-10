@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { getKlip } from "@/lib/actions/klip";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-import KlipChart from "@/components/klip/KlipChart";
 import EmptyState from "@/components/ui/EmptyState";
 import KlipDetailActions from "./KlipDetailActions";
 
@@ -12,12 +10,14 @@ const typeBadgeVariant: Record<
   string,
   "info" | "success" | "warning" | "error"
 > = {
-  bar: "info",
-  line: "info",
-  pie: "success",
-  area: "info",
-  number: "warning",
+  kpi_tile: "warning",
+  bar_chart: "info",
+  line_chart: "info",
+  area_chart: "info",
+  pie_chart: "success",
+  gauge: "warning",
   table: "success",
+  sparkline: "info",
 };
 
 export default async function KlipDetailPage({
@@ -35,8 +35,6 @@ export default async function KlipDetailPage({
   }
 
   if (!klip) notFound();
-
-  const hasData = klip.cached_data && klip.cached_data.length > 0;
 
   return (
     <div>
@@ -57,33 +55,26 @@ export default async function KlipDetailPage({
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold text-hero-grey-black">
-            {klip.title}
+            {klip.name}
           </h1>
           <Badge variant={typeBadgeVariant[klip.type] ?? "info"}>
             {klip.type}
           </Badge>
+          {klip.ai_generated && (
+            <Badge variant="warning">AI gegenereerd</Badge>
+          )}
         </div>
         <KlipDetailActions klipId={klip.id} />
       </div>
 
-      {/* Chart area */}
+      {/* Placeholder for chart -- data comes from query execution, not cached on klip */}
       <Card className="mb-6">
         <div className="min-h-[320px]">
-          {hasData ? (
-            <div className="h-[320px]">
-              <KlipChart
-                type={klip.type}
-                data={klip.cached_data!}
-                config={klip.config || {}}
-              />
-            </div>
-          ) : (
-            <EmptyState
-              icon="bar_chart"
-              title="Geen data beschikbaar"
-              description="Koppel een databron en voer een query uit om deze klip te vullen."
-            />
-          )}
+          <EmptyState
+            icon="bar_chart"
+            title="Visualisatie"
+            description="Koppel een query en voer deze uit om data te laden."
+          />
         </div>
       </Card>
 
@@ -109,10 +100,10 @@ export default async function KlipDetailPage({
             </div>
             <div>
               <dt className="text-xs font-medium text-hero-grey-regular">
-                Databron
+                Query
               </dt>
               <dd className="mt-0.5 text-hero-grey-black">
-                {klip.datasource ? klip.datasource.name : "Niet gekoppeld"}
+                {klip.query_id ? klip.query_id : "Niet gekoppeld"}
               </dd>
             </div>
             <div>
@@ -125,29 +116,30 @@ export default async function KlipDetailPage({
                   : "Onbekend"}
               </dd>
             </div>
-            {klip.cached_at && (
+          </dl>
+        </Card>
+
+        <Card title="AI informatie">
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-xs font-medium text-hero-grey-regular">
+                AI gegenereerd
+              </dt>
+              <dd className="mt-0.5 text-hero-grey-black">
+                {klip.ai_generated ? "Ja" : "Nee"}
+              </dd>
+            </div>
+            {klip.ai_prompt && (
               <div>
                 <dt className="text-xs font-medium text-hero-grey-regular">
-                  Data opgehaald op
+                  AI prompt
                 </dt>
                 <dd className="mt-0.5 text-hero-grey-black">
-                  {new Date(klip.cached_at).toLocaleString("nl-NL")}
+                  {klip.ai_prompt}
                 </dd>
               </div>
             )}
           </dl>
-        </Card>
-
-        <Card title="Query">
-          {klip.query ? (
-            <pre className="overflow-auto rounded-md bg-hero-blue-hairline p-3 text-xs text-hero-grey-black">
-              <code>{klip.query}</code>
-            </pre>
-          ) : (
-            <p className="text-sm text-hero-grey-regular">
-              Geen query geconfigureerd.
-            </p>
-          )}
         </Card>
       </div>
     </div>
