@@ -6,7 +6,7 @@ import {
   getAllKlipfolioTabs,
   getAllKlipfolioKlips,
   getAllKlipfolioDatasources,
-  getKlipfolioTabKlips,
+  getKlipfolioTabKlipInstances,
   getKlipfolioKlipDetails,
   getKlipfolioDatasourceDetails,
 } from "./client";
@@ -57,13 +57,17 @@ export async function discoverKlipfolioEnvironment(
 
   progress("lists", 3, 3, `Gevonden: ${allTabs.length} dashboards, ${allKlips.length} klips, ${allDatasources.length} databronnen`);
 
-  // Phase 2: Fetch klips per tab (dashboard -> klip mapping)
-  const tabKlipMap = new Map<string, KlipfolioKlipDetail[]>();
+  // Phase 2: Fetch klip instances per tab via /tabs/{id}/klip-instances
+  const tabKlipInstanceMap = new Map<string, { id: string; klip_id: string; name: string }[]>();
   for (let i = 0; i < allTabs.length; i++) {
     const tab = allTabs[i];
-    progress("tab-klips", i, allTabs.length, `Klips ophalen voor dashboard "${tab.name}"...`);
-    const tabKlips = await getKlipfolioTabKlips(tab.id);
-    tabKlipMap.set(tab.id, tabKlips);
+    progress("tab-klips", i, allTabs.length, `Klip instances ophalen voor dashboard "${tab.name}"...`);
+    const instances = await getKlipfolioTabKlipInstances(tab.id);
+    tabKlipInstanceMap.set(tab.id, instances.map((inst) => ({
+      id: inst.id,
+      klip_id: inst.klip_id,
+      name: inst.name,
+    })));
   }
 
   // Phase 3: Fetch detailed klip info (component_type, datasources)
@@ -111,12 +115,12 @@ export async function discoverKlipfolioEnvironment(
   // Track datasource usage
   const dsUsage = new Map<string, Set<string>>();
 
-  // Build dashboard maps
+  // Build dashboard maps using klip-instances
   const dashboards: KlipfolioDashboardMap[] = allTabs.map((tab) => {
-    const tabKlips = tabKlipMap.get(tab.id) || [];
+    const tabInstances = tabKlipInstanceMap.get(tab.id) || [];
 
-    const klipMaps: KlipfolioKlipMap[] = tabKlips.map((tk) => {
-      const klipId = tk.id;
+    const klipMaps: KlipfolioKlipMap[] = tabInstances.map((inst) => {
+      const klipId = inst.klip_id || inst.id;
       assignedKlipIds.add(klipId);
       const detail = klipDetailMap.get(klipId);
 
@@ -142,16 +146,16 @@ export async function discoverKlipfolioEnvironment(
 
       return {
         id: klipId,
-        name: detail?.name || tk.name || "Naamloze klip",
+        name: detail?.name || inst.name || "Naamloze klip",
         description: detail?.description || "",
         componentType: detail?.component_type || "onbekend",
         datasources: dsRefs,
         properties: detail?.properties,
-        position: tk.row != null ? {
-          row: tk.row,
-          col: tk.col,
-          sizeX: tk.size_x,
-          sizeY: tk.size_y,
+        position: detail?.row != null ? {
+          row: detail.row,
+          col: detail.col,
+          sizeX: detail.size_x,
+          sizeY: detail.size_y,
         } : undefined,
       };
     });

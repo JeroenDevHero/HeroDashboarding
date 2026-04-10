@@ -1,14 +1,21 @@
 // ============================================================================
 // Klipfolio API Client — Deep Discovery Edition
 // ============================================================================
+// Base URL: https://app.klipfolio.com/api/1
+// Auth: kf-api-key + kf-user-id headers
+// Rate limit: 5 requests/second — batching respects this
+// Pagination: limit (max 100) + offset
 
 import type {
   KlipfolioTab,
   KlipfolioTabDetail,
   KlipfolioKlip,
   KlipfolioKlipDetail,
+  KlipfolioKlipInstance,
+  KlipfolioKlipSchema,
   KlipfolioDatasource,
   KlipfolioDatasourceDetail,
+  KlipfolioDatasourceProperties,
   KlipfolioListResponse,
 } from "./types";
 
@@ -21,6 +28,12 @@ export type {
 } from "./types";
 
 const BASE_URL = "https://app.klipfolio.com/api/1";
+
+/** Max concurrent requests to stay under 5 req/sec rate limit */
+const BATCH_SIZE = 4;
+
+/** Small delay between batches to respect rate limit */
+const BATCH_DELAY_MS = 250;
 
 function getHeaders(): Record<string, string> {
   const apiKey = process.env.KLIPFOLIO_API_KEY;
@@ -43,6 +56,19 @@ async function klipfolioFetch<T>(path: string, revalidate = 300): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 429) {
+      // Rate limited — wait and retry once
+      await sleep(1000);
+      const retry = await fetch(`${BASE_URL}${path}`, {
+        headers: getHeaders(),
+        next: { revalidate },
+      });
+      if (!retry.ok) {
+        const text = await retry.text().catch(() => "Rate limit exceeded");
+        throw new Error(`Klipfolio API fout (${retry.status}): ${text}`);
+      }
+      return retry.json() as Promise<T>;
+    }
     const text = await res.text().catch(() => "Onbekende fout");
     throw new Error(`Klipfolio API fout (${res.status}): ${text}`);
   }
@@ -50,7 +76,34 @@ async function klipfolioFetch<T>(path: string, revalidate = 300): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ---------- Tabs (Dashboards) ----------
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function batchFetch<T>(
+  ids: string[],
+  fetcher: (id: string) => Promise<T>
+): Promise<T[]> {
+  const results: T[] = [];
+
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    if (i > 0) await sleep(BATCH_DELAY_MS);
+    const batch = ids.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.allSettled(batch.map(fetcher));
+
+    for (const result of batchResults) {
+      if (result.status === "fulfilled") {
+        results.push(result.value);
+      }
+    }
+  }
+
+  return results;
+}
+
+// ========================================================================
+// TABS (Dashboards)
+// ========================================================================
 
 export async function getKlipfolioTabs(limit = 50, offset = 0) {
   const data = await klipfolioFetch<KlipfolioListResponse<{ tabs: KlipfolioTab[] }>>(
@@ -64,16 +117,30 @@ export async function getKlipfolioTab(id: string): Promise<KlipfolioTabDetail> {
   return data.data;
 }
 
-export async function getKlipfolioTabKlips(tabId: string): Promise<KlipfolioKlipDetail[]> {
+/**
+ * Get klip instances on a tab — the correct endpoint per Klipfolio API docs.
+ * Returns which klips are placed on a dashboard with their positions.
+ */
+export async function getKlipfolioTabKlipInstances(tabId: string): Promise<KlipfolioKlipInstance[]> {
   try {
-    const data = await klipfolioFetch<KlipfolioListResponse<{ klips: KlipfolioKlipDetail[] }>>(
-      `/tabs/${tabId}/klips?limit=200`
+    const data = await klipfolioFetch<{ data: { klip_instances: KlipfolioKlipInstance[] } }>(
+      `/tabs/${tabId}/klip-instances`
     );
-    return data.data.klips || [];
+    return data.data.klip_instances || [];
   } catch {
-    // Fallback: some Klipfolio versions don't support /tabs/{id}/klips
     return [];
   }
+}
+
+/** @deprecated Use getKlipfolioTabKlipInstances instead */
+export async function getKlipfolioTabKlips(tabId: string): Promise<KlipfolioKlipDetail[]> {
+  const instances = await getKlipfolioTabKlipInstances(tabId);
+  // Convert instances to KlipfolioKlipDetail-like objects
+  return instances.map((inst) => ({
+    id: inst.klip_id || inst.id,
+    name: inst.name || "",
+    description: "",
+  }));
 }
 
 export async function getAllKlipfolioTabs(): Promise<KlipfolioTab[]> {
@@ -86,12 +153,15 @@ export async function getAllKlipfolioTabs(): Promise<KlipfolioTab[]> {
     allTabs.push(...tabs);
     offset += limit;
     if (offset >= total || tabs.length === 0) break;
+    await sleep(BATCH_DELAY_MS);
   }
 
   return allTabs;
 }
 
-// ---------- Klips ----------
+// ========================================================================
+// KLIPS (Visualizations)
+// ========================================================================
 
 export async function getKlipfolioKlips(limit = 50, offset = 0) {
   const data = await klipfolioFetch<KlipfolioListResponse<{ klips: KlipfolioKlip[] }>>(
@@ -105,6 +175,15 @@ export async function getKlipfolioKlip(id: string): Promise<KlipfolioKlipDetail>
   return data.data;
 }
 
+/**
+ * Get the visualization schema for a klip.
+ * Contains component type, data bindings, formulas, and layout config.
+ */
+export async function getKlipfolioKlipSchema(klipId: string): Promise<KlipfolioKlipSchema> {
+  const data = await klipfolioFetch<{ data: KlipfolioKlipSchema }>(`/klips/${klipId}/schema`);
+  return data.data;
+}
+
 export async function getAllKlipfolioKlips(): Promise<KlipfolioKlip[]> {
   const allKlips: KlipfolioKlip[] = [];
   let offset = 0;
@@ -115,32 +194,23 @@ export async function getAllKlipfolioKlips(): Promise<KlipfolioKlip[]> {
     allKlips.push(...klips);
     offset += limit;
     if (offset >= total || klips.length === 0) break;
+    await sleep(BATCH_DELAY_MS);
   }
 
   return allKlips;
 }
 
 export async function getKlipfolioKlipDetails(klipIds: string[]): Promise<KlipfolioKlipDetail[]> {
-  const batchSize = 5;
-  const results: KlipfolioKlipDetail[] = [];
-
-  for (let i = 0; i < klipIds.length; i += batchSize) {
-    const batch = klipIds.slice(i, i + batchSize);
-    const batchResults = await Promise.allSettled(
-      batch.map((id) => getKlipfolioKlip(id))
-    );
-
-    for (const result of batchResults) {
-      if (result.status === "fulfilled") {
-        results.push(result.value);
-      }
-    }
-  }
-
-  return results;
+  return batchFetch(klipIds, getKlipfolioKlip);
 }
 
-// ---------- Datasources ----------
+export async function getKlipfolioKlipSchemas(klipIds: string[]): Promise<KlipfolioKlipSchema[]> {
+  return batchFetch(klipIds, getKlipfolioKlipSchema);
+}
+
+// ========================================================================
+// DATASOURCES
+// ========================================================================
 
 export async function getKlipfolioDatasources(limit = 50, offset = 0) {
   const data = await klipfolioFetch<KlipfolioListResponse<{ datasources: KlipfolioDatasource[] }>>(
@@ -154,6 +224,17 @@ export async function getKlipfolioDatasource(id: string): Promise<KlipfolioDatas
   return data.data;
 }
 
+/**
+ * Get connection properties for a datasource.
+ * Returns connector-specific details: URL, query, credentials, etc.
+ */
+export async function getKlipfolioDatasourceProperties(dsId: string): Promise<KlipfolioDatasourceProperties> {
+  const data = await klipfolioFetch<{ data: { properties: Record<string, unknown> } }>(
+    `/datasources/${dsId}/properties`
+  );
+  return { datasource_id: dsId, properties: data.data.properties };
+}
+
 export async function getAllKlipfolioDatasources(): Promise<KlipfolioDatasource[]> {
   const allDs: KlipfolioDatasource[] = [];
   let offset = 0;
@@ -164,32 +245,25 @@ export async function getAllKlipfolioDatasources(): Promise<KlipfolioDatasource[
     allDs.push(...datasources);
     offset += limit;
     if (offset >= total || datasources.length === 0) break;
+    await sleep(BATCH_DELAY_MS);
   }
 
   return allDs;
 }
 
 export async function getKlipfolioDatasourceDetails(dsIds: string[]): Promise<KlipfolioDatasourceDetail[]> {
-  const batchSize = 5;
-  const results: KlipfolioDatasourceDetail[] = [];
-
-  for (let i = 0; i < dsIds.length; i += batchSize) {
-    const batch = dsIds.slice(i, i + batchSize);
-    const batchResults = await Promise.allSettled(
-      batch.map((id) => getKlipfolioDatasource(id))
-    );
-
-    for (const result of batchResults) {
-      if (result.status === "fulfilled") {
-        results.push(result.value);
-      }
-    }
-  }
-
-  return results;
+  return batchFetch(dsIds, getKlipfolioDatasource);
 }
 
-// ---------- Utility ----------
+export async function getKlipfolioDatasourcePropertiesBatch(
+  dsIds: string[]
+): Promise<KlipfolioDatasourceProperties[]> {
+  return batchFetch(dsIds, getKlipfolioDatasourceProperties);
+}
+
+// ========================================================================
+// Utility
+// ========================================================================
 
 export function isKlipfolioConfigured(): boolean {
   return !!(process.env.KLIPFOLIO_API_KEY && process.env.KLIPFOLIO_USER_ID);

@@ -49,16 +49,16 @@ export const KLIPFOLIO_API_REFERENCE = {
         },
       },
     },
-    getKlips: {
+    getKlipInstances: {
       method: "GET",
-      path: "/tabs/{id}/klips",
-      description: "Returns all klips placed on a specific tab/dashboard with their positions",
+      path: "/tabs/{id}/klip-instances",
+      description: "Returns all klip instances on a tab with their template klip IDs. This is the correct endpoint for tab-klip mapping.",
       response: {
         meta: { total: "number" },
         data: {
-          klips: [
+          klip_instances: [
             {
-              id: "string - klip ID",
+              id: "string - instance ID (unique per tab placement)",
               klip_id: "string - referenced klip ID",
               name: "string - klip name",
               position: "number - sort order",

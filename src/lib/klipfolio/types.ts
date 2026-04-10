@@ -1,11 +1,17 @@
 // ============================================================================
 // Klipfolio API — Deep Type Definitions
 // ============================================================================
+// Based on: https://apidocs.klipfolio.com/reference
+// Verified endpoints: /tabs, /tabs/{id}/klip-instances, /klips, /klips/{id},
+//   /klips/{id}/schema, /datasources, /datasources/{id}, /datasources/{id}/properties
 
 // ---------- Core API Response Types ----------
 
 export interface KlipfolioMeta {
   total: number;
+  count?: number;
+  status?: number;
+  success?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -28,6 +34,8 @@ export interface KlipfolioTab {
 }
 
 export interface KlipfolioTabDetail extends KlipfolioTab {
+  company?: string;
+  created_by?: string;
   klips?: KlipfolioTabKlipEntry[];
 }
 
@@ -40,6 +48,18 @@ export interface KlipfolioTabKlipEntry {
   col?: number;
   size_x?: number;
   size_y?: number;
+}
+
+/**
+ * Klip instance on a tab — returned by GET /tabs/{id}/klip-instances.
+ * Each instance has its own ID plus a reference to the template klip.
+ */
+export interface KlipfolioKlipInstance {
+  id: string;
+  klip_id: string;
+  name: string;
+  region?: number;
+  position?: number;
 }
 
 // ---------- Klip Types ----------
@@ -56,9 +76,11 @@ export interface KlipfolioKlip {
 export interface KlipfolioKlipDetail extends KlipfolioKlip {
   component_type?: string;
   tab_id?: string;
+  company?: string;
   datasources?: KlipfolioKlipDatasource[];
   properties?: Record<string, unknown>;
   formula?: string;
+  share_rights?: KlipfolioShareRight[];
   active?: boolean;
   row?: number;
   col?: number;
@@ -72,6 +94,30 @@ export interface KlipfolioKlipDatasource {
   name?: string;
 }
 
+export interface KlipfolioShareRight {
+  group_id: string;
+  group_name: string;
+  can_edit: boolean;
+}
+
+/**
+ * Klip schema — returned by GET /klips/{id}/schema.
+ * Contains the full visualization config: component type, formulas,
+ * data source bindings, and layout/formatting settings.
+ */
+export interface KlipfolioKlipSchema {
+  component_type?: string;
+  datasource_instances?: Array<{
+    id: string;
+    datasource_id: string;
+    name?: string;
+  }>;
+  formulas?: Record<string, unknown>;
+  layout?: Record<string, unknown>;
+  properties?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 // ---------- Datasource Types ----------
 
 export interface KlipfolioDatasource {
@@ -80,18 +126,31 @@ export interface KlipfolioDatasource {
   description: string;
   refresh_interval?: number;
   date_last_refresh?: string;
+  is_dynamic?: boolean;
 }
 
 export interface KlipfolioDatasourceDetail extends KlipfolioDatasource {
   connector?: string;
   type?: string;
+  company?: string;
   properties?: Record<string, unknown>;
   format?: string;
   url?: string;
   query?: string;
+  disabled?: boolean;
   date_created?: string;
   last_updated?: string;
   active?: boolean;
+  created_by?: string;
+}
+
+/**
+ * Datasource properties — returned by GET /datasources/{id}/properties.
+ * Contains connector-specific connection details (URL, query, credentials, etc.)
+ */
+export interface KlipfolioDatasourceProperties {
+  datasource_id: string;
+  properties: Record<string, unknown>;
 }
 
 // ---------- Mapped/Discovery Types ----------
@@ -151,112 +210,219 @@ export interface KlipfolioDatasourceMap {
   usedByKlips: string[];
 }
 
-// ---------- Component Type Mapping ----------
+// ============================================================================
+// Component Type Mapping — ALL known Klipfolio component_type values
+// ============================================================================
 
 export const KLIPFOLIO_COMPONENT_TYPES: Record<string, string> = {
+  // Charts — Basic
   "bar-chart": "Staafdiagram",
   "column-chart": "Kolomdiagram",
+  "horizontal-bar": "Horizontaal staafdiagram",
+  "stacked-bar-chart": "Gestapeld staafdiagram",
+  "100-stacked-bar": "100% gestapeld staafdiagram",
+  "grouped-bar": "Gegroepeerd staafdiagram",
   "line-chart": "Lijndiagram",
+  "multi-line": "Multi-lijn",
   "area-chart": "Vlakdiagram",
+  "stacked-area-chart": "Gestapeld vlakdiagram",
+  "100-stacked-area": "100% gestapeld vlakdiagram",
   "pie-chart": "Taartdiagram",
   "donut-chart": "Donutdiagram",
   "scatter-chart": "Spreidingsdiagram",
   "bubble-chart": "Bellendiagram",
   "combo-chart": "Combinatiediagram",
-  "stacked-bar-chart": "Gestapeld staafdiagram",
-  "stacked-area-chart": "Gestapeld vlakdiagram",
+  "column-line-combo": "Kolom-lijn combo",
+
+  // Charts — Advanced
   "funnel-chart": "Trechterdiagram",
+  "waterfall-chart": "Watervalgrafiek",
+  "bullet-chart": "Bullet chart",
+  "pareto-chart": "Paretodiagram",
+  "radar-chart": "Radardiagram",
+  "histogram": "Histogram",
+  "box-plot": "Boxplot",
+  "candlestick": "Candlestick",
+  "sankey": "Sankey diagram",
+  "timeline": "Tijdlijn",
+
+  // KPI / Number Widgets
   "gauge": "Meter",
   "number-block": "Getal / KPI",
   "sparkline": "Sparkline",
+  "win-loss": "Win/Loss sparkline",
+  "progress-bar": "Voortgangsbalk",
+  "indicator": "Indicator (pijl)",
+  "ticker": "Ticker (scrollend)",
+  "metric-list": "Metriekenlijst",
+  "summary-block": "Samenvattingsblok",
+
+  // Tables
   "table": "Tabel",
   "pivot-table": "Draaitabel",
-  "image": "Afbeelding",
-  "text-block": "Tekstblok",
-  "html-block": "HTML blok",
+  "leaderboard": "Ranglijst",
+  "comparison-table": "Vergelijkingstabel",
+
+  // Maps
   "map": "Kaart",
   "geo-map": "Geografische kaart",
   "heatmap": "Heatmap",
+  "calendar-heatmap": "Kalender heatmap",
   "treemap": "Treemap",
-  "waterfall-chart": "Watervalgrafiek",
-  "bullet-chart": "Bullet chart",
-  "progress-bar": "Voortgangsbalk",
-  "win-loss": "Win/Loss sparkline",
-  "multi-line": "Multi-lijn",
-  "grouped-bar": "Gegroepeerd staafdiagram",
-  "timeline": "Tijdlijn",
-  "leaderboard": "Ranglijst",
+
+  // Content
+  "image": "Afbeelding",
+  "text-block": "Tekstblok",
+  "html-block": "HTML blok",
+  "word-cloud": "Woordwolk",
 };
 
+// ============================================================================
+// Connector Type Mapping — ALL known Klipfolio connector values
+// ============================================================================
+
 export const KLIPFOLIO_CONNECTOR_TYPES: Record<string, string> = {
-  rest_api: "REST API",
+  // Database
+  db: "Database (SQL)",
   sql_query: "SQL Query",
   mysql: "MySQL",
   postgresql: "PostgreSQL",
   mssql: "Microsoft SQL Server",
+  xmla: "XMLA / OLAP",
+
+  // Cloud Data Warehouses
+  databricks: "Databricks",
+  snowflake: "Snowflake",
+  google_bigquery: "Google BigQuery",
+  amazon_redshift: "Amazon Redshift",
+
+  // REST / Web
+  simple_rest: "REST API",
+  rest_api: "REST API",
+  json: "JSON",
+  xml: "XML",
+  csv: "CSV",
+  ftp: "FTP/SFTP",
+
+  // Google
   google_analytics: "Google Analytics",
   google_analytics_4: "Google Analytics 4",
+  google_spreadsheets: "Google Sheets",
   google_sheets: "Google Sheets",
-  google_bigquery: "Google BigQuery",
+  google_drive: "Google Drive",
   google_ads: "Google Ads",
+  google_adwords: "Google AdWords",
+
+  // Social / Marketing
   facebook: "Facebook",
   facebook_ads: "Facebook Ads",
   instagram: "Instagram",
   twitter: "Twitter / X",
   linkedin: "LinkedIn",
   hubspot: "HubSpot",
+  mailchimp: "Mailchimp",
+  marketo: "Marketo",
+  survey_monkey: "SurveyMonkey",
+
+  // CRM / Business
   salesforce: "Salesforce",
   quickbooks: "QuickBooks",
   xero: "Xero",
-  stripe: "Stripe",
   shopify: "Shopify",
-  mailchimp: "Mailchimp",
+  stripe: "Stripe",
   zendesk: "Zendesk",
   jira: "Jira",
+
+  // File / Storage
+  box: "Box",
+  dropbox: "Dropbox",
   excel: "Excel / CSV",
-  csv: "CSV",
-  json: "JSON",
-  xml: "XML",
-  ftp: "FTP/SFTP",
+
+  // Analytics / Other
+  comscore: "comScore",
+  omniture: "Adobe Analytics (Omniture)",
+  radian6: "Radian6",
+  searchMetrics: "SearchMetrics",
+  iformbuilder: "iFormBuilder",
+  versature: "Versature",
   custom: "Custom connector",
-  databricks: "Databricks",
-  snowflake: "Snowflake",
-  amazon_redshift: "Amazon Redshift",
 };
 
-// ---------- Hero Type Mapping ----------
+// ============================================================================
+// Hero Type Mapping — Klipfolio component_type → Hero KlipType
+// ============================================================================
 
 export const KLIPFOLIO_TO_HERO_TYPE: Record<string, string> = {
+  // Bar charts
   "bar-chart": "bar_chart",
   "column-chart": "bar_chart",
+  "horizontal-bar": "bar_chart",
   "stacked-bar-chart": "bar_chart",
+  "100-stacked-bar": "bar_chart",
   "grouped-bar": "bar_chart",
+
+  // Line charts
   "line-chart": "line_chart",
   "multi-line": "line_chart",
+
+  // Area charts
   "area-chart": "area_chart",
   "stacked-area-chart": "area_chart",
+  "100-stacked-area": "area_chart",
+
+  // Pie / donut
   "pie-chart": "pie_chart",
   "donut-chart": "pie_chart",
+
+  // Scatter / bubble
   "scatter-chart": "scatter_chart",
   "bubble-chart": "scatter_chart",
+
+  // Combo
   "combo-chart": "combo_chart",
+  "column-line-combo": "combo_chart",
+  "pareto-chart": "combo_chart",
+
+  // Flow
   "funnel-chart": "funnel",
+  "sankey": "sankey",
+
+  // Advanced charts
+  "waterfall-chart": "waterfall_chart",
+  "bullet-chart": "bullet_chart",
+  "radar-chart": "radar_chart",
+  "histogram": "bar_chart",
+  "box-plot": "box_plot",
+  "candlestick": "line_chart",
+  "timeline": "timeline",
+
+  // KPI widgets
   "gauge": "gauge",
   "number-block": "kpi_tile",
   "sparkline": "sparkline",
+  "win-loss": "sparkline",
+  "progress-bar": "progress_bar",
+  "indicator": "kpi_tile",
+  "ticker": "kpi_tile",
+  "metric-list": "kpi_tile",
+  "summary-block": "metric_card",
+
+  // Tables
   "table": "table",
   "pivot-table": "table",
-  "text-block": "text_widget",
-  "html-block": "iframe",
-  "image": "iframe",
+  "leaderboard": "table",
+  "comparison-table": "table",
+
+  // Maps / spatial
   "map": "map",
   "geo-map": "map",
   "heatmap": "heatmap",
-  "treemap": "heatmap",
-  "waterfall-chart": "bar_chart",
-  "bullet-chart": "bar_chart",
-  "progress-bar": "progress_bar",
-  "win-loss": "sparkline",
-  "timeline": "line_chart",
-  "leaderboard": "table",
+  "calendar-heatmap": "heatmap",
+  "treemap": "treemap",
+
+  // Content
+  "text-block": "text_widget",
+  "html-block": "iframe",
+  "image": "iframe",
+  "word-cloud": "text_widget",
 };
