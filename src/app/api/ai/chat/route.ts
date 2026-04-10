@@ -9,6 +9,7 @@ import {
   executeGetDataIntelligence,
   executeGetKnowledgeContext,
   executeSaveKnowledge,
+  executeGetVisualKnowledge,
 } from "@/lib/ai/tools";
 import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
 
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
 async function saveConversationProgress(
   conversationId: string,
   userId: string,
-  messages: { role: string; content: string }[],
+  messages: { role: string; content: string; tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[] }[],
   status: "in_progress" | "completed" | "error",
   createdKlipIds: string[] = []
 ) {
@@ -31,6 +32,7 @@ async function saveConversationProgress(
   const messagesJsonb: Record<string, unknown>[] = messages.map((m) => ({
     role: m.role,
     content: m.content,
+    ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
     timestamp: new Date().toISOString(),
   }));
 
@@ -330,7 +332,11 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { messages, conversationId: incomingConversationId } = body as {
-      messages: { role: string; content: string }[];
+      messages: {
+        role: string;
+        content: string;
+        tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[];
+      }[];
       conversationId?: string;
     };
 
@@ -388,10 +394,19 @@ export async function POST(request: Request) {
     console.log("[AI Chat] Pre-loading context...");
     const preloadStart = Date.now();
 
-    // Fetch datasources once, then use the IDs for catalog + intelligence
-    const [knowledgeContext, datasourcesList] = await Promise.all([
+    // Fetch datasources + Klipfolio discovery + visual knowledge in parallel
+    const adminSupa = createAdminClient();
+    const [knowledgeContext, datasourcesList, klipfolioDiscovery, visualKnowledge] = await Promise.all([
       executeGetKnowledgeContext().catch(() => "Geen kennisbank items gevonden."),
       executeListDatasources(user.id).catch(() => []),
+      Promise.resolve(
+        adminSupa
+          .from("klipfolio_discovery")
+          .select("knowledge_text")
+          .eq("id", "latest")
+          .maybeSingle()
+      ).then((r) => (r.data?.knowledge_text as string) || "").catch(() => ""),
+      executeGetVisualKnowledge().catch(() => ""),
     ]);
 
     const dsArray = Array.isArray(datasourcesList) ? datasourcesList : [];
@@ -420,6 +435,8 @@ export async function POST(request: Request) {
 
 --- KENNISBANK ---
 ${knowledgeContext}
+${klipfolioDiscovery ? `\n--- KLIPFOLIO OMGEVING (bestaande dashboards & klips) ---\n${klipfolioDiscovery}` : ""}
+${visualKnowledge ? `\n--- BESCHIKBARE VISUALISATIETYPEN ---\n${visualKnowledge}` : ""}
 
 --- DATABRONNEN ---
 ${datasourcesText}
@@ -438,7 +455,7 @@ ${intelligenceSummaries}`;
 
     // Start streaming response from Claude - now with full context pre-loaded
     const stream = await anthropic.messages.stream({
-      model: "claude-opus-4-20250514",
+      model: "claude-opus-4-6",
       max_tokens: 16384,
       system: enrichedSystemPrompt,
       tools: TOOLS,
@@ -475,6 +492,50 @@ ${intelligenceSummaries}`;
         let lastPreviewResult: unknown = null;
         let lastPreviewInput: { query: string; data_source_id?: string } | null = null;
         const allMessages = [...messages];
+
+        // Recover preview data so reworks (user modifying a klip) still have sample_data.
+        // Strategy 1: Check incoming messages for tool_calls with preview_data results
+        for (let mi = messages.length - 1; mi >= 0; mi--) {
+          const msg = messages[mi];
+          if (msg.tool_calls) {
+            for (let ti = msg.tool_calls.length - 1; ti >= 0; ti--) {
+              const tc = msg.tool_calls[ti];
+              if (tc.name === "preview_data" && tc.result) {
+                const r = tc.result as Record<string, unknown>;
+                if (r.rows && Array.isArray(r.rows) && (r.rows as unknown[]).length > 0) {
+                  lastPreviewResult = tc.result;
+                  lastPreviewInput = tc.input as { query: string; data_source_id?: string };
+                  console.log("[AI Chat] Recovered preview data from message tool_calls");
+                  break;
+                }
+              }
+            }
+            if (lastPreviewResult) break;
+          }
+        }
+
+        // Strategy 2: Fallback to DB - check existing klips in this conversation
+        if (!lastPreviewResult && conversationId) {
+          try {
+            const prevKlipAdmin = createAdminClient();
+            const { data: existingKlips } = await prevKlipAdmin
+              .from("klips")
+              .select("config")
+              .eq("ai_conversation_id", conversationId)
+              .order("created_at", { ascending: false })
+              .limit(1);
+
+            if (existingKlips?.[0]?.config) {
+              const prevConfig = existingKlips[0].config as Record<string, unknown>;
+              if (prevConfig.sample_data && Array.isArray(prevConfig.sample_data) && (prevConfig.sample_data as unknown[]).length > 0) {
+                lastPreviewResult = { rows: prevConfig.sample_data };
+                console.log("[AI Chat] Recovered preview data from previous klip in DB");
+              }
+            }
+          } catch (err) {
+            console.error("[AI Chat] Failed to recover preview data from DB:", err);
+          }
+        }
 
         try {
           let currentMessages: Anthropic.Messages.MessageParam[] = [...anthropicMessages];
@@ -664,17 +725,26 @@ ${intelligenceSummaries}`;
               if (block.type === "text") assistantText += block.text;
             }
 
-            const toolSummaries = toolResults
-              .map((tr, i) => {
-                const toolName = toolUseBlocks[i].name;
-                let resultObj: unknown;
-                try {
-                  resultObj = JSON.parse(tr.content as string);
-                } catch {
-                  resultObj = null;
-                }
-                const summary = summarizeToolResult(toolName, resultObj);
-                return `[Tool: ${toolName} - ${summary}]`;
+            // Capture structured tool calls with results for DB persistence
+            const structuredToolCalls = toolUseBlocks.map((tb, i) => {
+              let resultObj: unknown;
+              try {
+                resultObj = JSON.parse(toolResults[i].content as string);
+              } catch {
+                resultObj = null;
+              }
+              return {
+                id: tb.id,
+                name: tb.name,
+                input: tb.input as Record<string, unknown>,
+                result: resultObj,
+              };
+            });
+
+            const toolSummaries = structuredToolCalls
+              .map((tc) => {
+                const summary = summarizeToolResult(tc.name, tc.result);
+                return `[Tool: ${tc.name} - ${summary}]`;
               })
               .join("\n");
 
@@ -682,8 +752,12 @@ ${intelligenceSummaries}`;
               assistantText += (assistantText ? "\n\n" : "") + toolSummaries;
             }
 
-            if (assistantText) {
-              allMessages.push({ role: "assistant", content: assistantText });
+            if (assistantText || structuredToolCalls.length > 0) {
+              allMessages.push({
+                role: "assistant",
+                content: assistantText,
+                tool_calls: structuredToolCalls,
+              });
             }
 
             // Save progress after each tool round so nothing is lost on disconnect
@@ -707,7 +781,7 @@ ${intelligenceSummaries}`;
             ];
 
             currentStream = await anthropic.messages.stream({
-              model: "claude-opus-4-20250514",
+              model: "claude-opus-4-6",
               max_tokens: 16384,
               system: enrichedSystemPrompt,
               tools: TOOLS,

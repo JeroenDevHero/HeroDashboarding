@@ -101,10 +101,21 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
       setToolStatus({ executing: true, currentTool: null, phase: "loading_context" });
 
       // Build the messages array for the API (all messages in conversation)
+      // Include tool_calls so the server can recover preview data and context
       const apiMessages = [
         ...messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
+          ...(msg.toolCalls && msg.toolCalls.length > 0
+            ? {
+                tool_calls: msg.toolCalls.map((tc) => ({
+                  id: tc.id,
+                  name: tc.name,
+                  input: tc.input,
+                  result: tc.result,
+                })),
+              }
+            : {}),
         })),
         { role: "user" as const, content: content.trim() },
       ];

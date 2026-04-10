@@ -102,18 +102,19 @@ export default function AIAssistant({
           conversation.messages as { id?: string; role: string; content: string; tool_calls?: unknown[] }[]
         ).filter((m) => m.role !== "_meta");
 
-        // Map persisted messages to ChatMessage format
+        // Map persisted messages to ChatMessage format, including tool results
         const mapped: ChatMessage[] = realMessages.map(
           (m) => ({
             id: m.id || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
             role: m.role as "user" | "assistant",
             content: m.content || "",
             toolCalls: m.tool_calls
-              ? (m.tool_calls as { id: string; name: string; input: Record<string, unknown> }[]).map(
+              ? (m.tool_calls as { id: string; name: string; input: Record<string, unknown>; result?: unknown }[]).map(
                   (tc) => ({
                     id: tc.id,
                     name: tc.name,
                     input: tc.input || {},
+                    result: tc.result,
                   })
                 )
               : undefined,
