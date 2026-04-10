@@ -41,8 +41,8 @@ function generateId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function useAIChat(conversationId?: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function useAIChat(conversationId?: string, initialMessages?: ChatMessage[]) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState<ToolStatus>({
     executing: false,
@@ -258,5 +258,5 @@ export function useAIChat(conversationId?: string) {
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, toolStatus, sendMessage, clearMessages };
+  return { messages, isLoading, toolStatus, sendMessage, clearMessages, setMessages };
 }

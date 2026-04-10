@@ -1,5 +1,7 @@
-import AIChat from "./AIChat";
+import { getConversations } from "@/lib/actions/ai";
+import AIAssistant from "./AIAssistant";
 
-export default function AIPage() {
-  return <AIChat />;
+export default async function AIPage() {
+  const conversations = await getConversations();
+  return <AIAssistant initialConversations={conversations} />;
 }

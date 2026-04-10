@@ -86,6 +86,24 @@ export async function deleteConversation(id: string) {
   revalidatePath('/ai');
 }
 
+export async function updateConversationTitle(id: string, title: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const { error } = await supabase
+    .from('ai_conversations')
+    .update({ title })
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/ai');
+}
+
 export async function saveMessage(
   conversationId: string,
   role: 'user' | 'assistant',
