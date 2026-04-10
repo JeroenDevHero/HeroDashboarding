@@ -60,20 +60,20 @@ async function persistConversation(
   }
 }
 
-const SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
+const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
 
 STRENGE REGELS:
 - Gebruik UITSLUITEND data uit de gekoppelde databronnen. Verzin NOOIT data, feiten, of voorbeelden.
-- Als je iets niet weet of niet kunt opzoeken via de tools, zeg dat eerlijk. Maak GEEN aannames over het bedrijf, vestigingen, klanten of producten.
-- Elk feit dat je noemt MOET afkomstig zijn uit een query-resultaat of de kennisbank. Zonder bron, geen bewering.
+- Als je iets niet weet, zeg dat eerlijk. Maak GEEN aannames over het bedrijf, vestigingen, klanten of producten.
+- Elk feit dat je noemt MOET afkomstig zijn uit een query-resultaat of de kennisbank hieronder.
 
 Werkwijze:
-1. Haal ALTIJD eerst de kennisbank op via get_knowledge_context voor bedrijfscontext
-2. Haal beschikbare databronnen op via list_datasources
-3. Gebruik get_data_catalog om de datastructuur te begrijpen
-4. Gebruik get_data_intelligence om te zien welke queries eerder succesvol waren en hergebruik bewezen patronen
-5. Preview data met preview_data voordat je een klip aanmaakt
-6. Maak de klip aan met create_klip en bevestig dat het klaar is
+1. De kennisbank, databronnen, data catalog en intelligence zijn HIERONDER al meegeleverd - je hoeft ze NIET meer op te halen via tools
+2. Gebruik preview_data om data te bekijken voordat je een klip aanmaakt
+3. Maak de klip aan met create_klip
+4. Klaar - bevestig het resultaat
+
+BELANGRIJK: Ga DIRECT aan de slag. Roep NIET list_datasources, get_data_catalog, get_data_intelligence of get_knowledge_context aan - die data staat al hieronder.
 
 Opmaak:
 - Gebruik ALTIJD nette, leesbare Nederlandse namen (geen veldnamen met underscores)
@@ -82,9 +82,7 @@ Opmaak:
 - Maak het werk altijd helemaal af
 
 Kennisbank:
-- Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge
-- Voorbeelden: "Wij hebben 5 vestigingen", "Onze fiscal year loopt van april tot maart", "KPI omzet target is 50M"
-- Categoriseer kennis correct (bedrijf, data, klanten, producten, processen, definities)`;
+- Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge`;
 
 const TOOLS: Anthropic.Messages.Tool[] = [
   {
@@ -357,17 +355,64 @@ export async function POST(request: Request) {
 
     const anthropic = new Anthropic();
 
+    // Pre-load ALL context so Claude doesn't need to call tools for discovery
+    // This eliminates 4+ tool rounds and prevents Railway proxy timeout
+    console.log("[AI Chat] Pre-loading context...");
+    const preloadStart = Date.now();
+
+    // Fetch datasources once, then use the IDs for catalog + intelligence
+    const [knowledgeContext, datasourcesList] = await Promise.all([
+      executeGetKnowledgeContext().catch(() => "Geen kennisbank items gevonden."),
+      executeListDatasources(user.id).catch(() => []),
+    ]);
+
+    const dsArray = Array.isArray(datasourcesList) ? datasourcesList : [];
+    const dsIds = dsArray.map((d: Record<string, unknown>) => d.id as string);
+
+    // Fetch catalog + intelligence for all datasources in parallel
+    const [catalogSummaries, intelligenceSummaries] = await Promise.all([
+      dsIds.length > 0
+        ? Promise.all(dsIds.map((id) => executeGetDataCatalog(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen catalog beschikbaar.")
+        : Promise.resolve("Geen databronnen geconfigureerd."),
+      dsIds.length > 0
+        ? Promise.all(dsIds.map((id) => executeGetDataIntelligence(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen intelligence beschikbaar.")
+        : Promise.resolve("Geen intelligence beschikbaar."),
+    ]);
+
+    console.log(`[AI Chat] Context pre-loaded in ${Date.now() - preloadStart}ms`);
+
+    // Build enriched system prompt with all context
+    const datasourcesText = Array.isArray(datasourcesList)
+      ? datasourcesList.map((d: Record<string, unknown>) =>
+          `- ${d.name} (id: ${d.id}, type: ${(d as Record<string, unknown>).data_source_types ? ((d as Record<string, unknown>).data_source_types as Record<string, unknown>).slug : "onbekend"})`
+        ).join("\n")
+      : "Geen databronnen gevonden.";
+
+    const enrichedSystemPrompt = `${BASE_SYSTEM_PROMPT}
+
+--- KENNISBANK ---
+${knowledgeContext}
+
+--- DATABRONNEN ---
+${datasourcesText}
+
+--- DATA CATALOG (tabellen en kolommen) ---
+${catalogSummaries}
+
+--- DATA INTELLIGENCE (bewezen patronen) ---
+${intelligenceSummaries}`;
+
     // Cast messages to the expected Anthropic format
     const anthropicMessages = messages.map((msg) => ({
       role: msg.role as "user" | "assistant",
       content: msg.content,
     }));
 
-    // Start streaming response from Claude
+    // Start streaming response from Claude - now with full context pre-loaded
     const stream = await anthropic.messages.stream({
       model: "claude-opus-4-20250514",
       max_tokens: 16384,
-      system: SYSTEM_PROMPT,
+      system: enrichedSystemPrompt,
       tools: TOOLS,
       messages: anthropicMessages,
     });
@@ -614,7 +659,7 @@ export async function POST(request: Request) {
             currentStream = await anthropic.messages.stream({
               model: "claude-opus-4-20250514",
               max_tokens: 16384,
-              system: SYSTEM_PROMPT,
+              system: enrichedSystemPrompt,
               tools: TOOLS,
               messages: currentMessages,
             });

@@ -19,6 +19,7 @@ export interface ChatMessage {
 export interface ToolStatus {
   executing: boolean;
   currentTool: string | null;
+  phase?: "loading_context" | "streaming" | "tool_exec";
 }
 
 interface StreamEvent {
@@ -67,6 +68,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
 
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
+      setToolStatus({ executing: true, currentTool: null, phase: "loading_context" });
 
       // Build the messages array for the API (all messages in conversation)
       const apiMessages = [
@@ -113,6 +115,9 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
             `API fout: ${response.status} - ${errorText}`
           );
         }
+
+        // Context is loaded, now streaming
+        setToolStatus({ executing: false, currentTool: null, phase: "streaming" });
 
         const reader = response.body?.getReader();
         if (!reader) throw new Error("Geen response stream beschikbaar");

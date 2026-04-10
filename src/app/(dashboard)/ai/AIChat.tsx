@@ -123,8 +123,22 @@ export default function AIChat({
               <ChatMessage key={msg.id} message={msg} />
             ))}
 
+            {/* Context loading indicator */}
+            {isLoading && toolStatus?.phase === "loading_context" && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-md bg-hero-blue-hairline px-4 py-2.5">
+                  <div className="flex items-center gap-2 text-xs text-hero-blue">
+                    <span className="material-symbols-rounded text-[16px] animate-spin">
+                      progress_activity
+                    </span>
+                    <span>Context laden (databronnen, catalog, kennisbank)...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Tool execution indicator */}
-            {isLoading && toolStatus?.executing && (
+            {isLoading && toolStatus?.executing && toolStatus?.phase !== "loading_context" && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-md bg-hero-blue-hairline px-4 py-2.5">
                   <div className="flex items-center gap-2 text-xs text-hero-blue">
