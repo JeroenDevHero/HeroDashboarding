@@ -1,7 +1,20 @@
 import { getConversations } from "@/lib/actions/ai";
 import AIAssistant from "./AIAssistant";
 
-export default async function AIPage() {
+export default async function AIPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const conversations = await getConversations();
-  return <AIAssistant initialConversations={conversations} />;
+  const { conversation } = await searchParams;
+  const initialConversationId =
+    typeof conversation === "string" ? conversation : undefined;
+
+  return (
+    <AIAssistant
+      initialConversations={conversations}
+      initialConversationId={initialConversationId}
+    />
+  );
 }

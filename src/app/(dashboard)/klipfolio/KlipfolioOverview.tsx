@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -189,6 +190,8 @@ export default function KlipfolioOverview({
 /* ------------------------------------------------------------------ */
 
 function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
+  const router = useRouter();
+
   if (tabs.length === 0) {
     return (
       <Card>
@@ -213,6 +216,9 @@ function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
               <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs">
                 Beschrijving
               </th>
+              <th className="px-5 py-3 font-medium text-hero-grey-regular text-xs w-32">
+                Acties
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -226,6 +232,18 @@ function DashboardsTable({ tabs }: { tabs: KlipfolioTab[] }) {
                 </td>
                 <td className="px-5 py-3 text-hero-grey-regular max-w-md truncate">
                   {tab.description || "-"}
+                </td>
+                <td className="px-5 py-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="auto_awesome"
+                    onClick={() =>
+                      router.push(`/klipfolio/rebuild/${tab.id}`)
+                    }
+                  >
+                    Herbouwen
+                  </Button>
                 </td>
               </tr>
             ))}

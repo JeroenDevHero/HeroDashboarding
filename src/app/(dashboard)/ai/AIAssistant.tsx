@@ -26,12 +26,26 @@ interface ConversationListItem {
 
 interface AIAssistantProps {
   initialConversations: ConversationListItem[];
+  initialConversationId?: string;
 }
 
-export default function AIAssistant({ initialConversations }: AIAssistantProps) {
+export default function AIAssistant({
+  initialConversations,
+  initialConversationId,
+}: AIAssistantProps) {
   const [conversations, setConversations] = useState(initialConversations);
+
+  // If a specific conversation ID was passed (e.g. from rebuild flow), use that.
+  // Otherwise default to the first conversation.
+  const defaultConversationId = initialConversationId
+    && initialConversations.some((c) => c.id === initialConversationId)
+    ? initialConversationId
+    : initialConversations.length > 0
+      ? initialConversations[0].id
+      : null;
+
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    initialConversations.length > 0 ? initialConversations[0].id : null
+    defaultConversationId
   );
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
