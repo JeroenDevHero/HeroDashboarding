@@ -26,7 +26,18 @@ export type KlipType =
   | "heatmap"
   | "combo_chart"
   | "text_widget"
-  | "iframe";
+  | "iframe"
+  | "radar_chart"
+  | "treemap"
+  | "waterfall_chart"
+  | "sankey"
+  | "bullet_chart"
+  | "box_plot"
+  | "slope_chart"
+  | "small_multiples"
+  | "metric_card"
+  | "status_board"
+  | "timeline";
 
 export interface CreateKlipInput {
   name: string;
