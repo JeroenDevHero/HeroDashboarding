@@ -4,6 +4,7 @@ import {
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
 import { getCatalogSummary } from "@/lib/datasources/catalog";
+import { getKnowledgeContext } from "@/lib/actions/knowledge";
 
 /** Valid klip_type enum values matching the Postgres enum */
 export type KlipType =
@@ -173,6 +174,36 @@ export async function executeGetDataCatalog(
   dataSourceId: string
 ): Promise<string> {
   return getCatalogSummary(dataSourceId);
+}
+
+export async function executeGetKnowledgeContext(): Promise<string> {
+  return getKnowledgeContext();
+}
+
+export async function executeSaveKnowledge(
+  input: { title: string; content: string; category: string; tags?: string[] },
+  userId: string
+): Promise<unknown> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("knowledge_base")
+    .insert({
+      title: input.title,
+      content: input.content,
+      category: input.category,
+      tags: input.tags || [],
+      source: "AI Assistent",
+      created_by: userId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Kennis opslaan mislukt: ${error.message}`);
+  }
+
+  return data;
 }
 
 export async function executeListDatasources(userId: string) {

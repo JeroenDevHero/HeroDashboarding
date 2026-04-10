@@ -6,8 +6,8 @@ import {
   useContainerWidth,
   type Layout,
 } from "react-grid-layout";
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
+// CSS is loaded globally via globals.css (node_modules CSS imports are
+// unreliable in Next.js App Router with Tailwind v4).
 import KlipCard from "@/components/klip/KlipCard";
 
 interface KlipConfig {
@@ -80,14 +80,20 @@ export default function DashboardGrid({
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
           cols={{ lg: 12, md: 9, sm: 6, xs: 3 }}
           rowHeight={80}
-          dragConfig={{ enabled: editable, handle: ".drag-handle" }}
-          resizeConfig={{ enabled: editable }}
+          dragConfig={{
+            enabled: editable,
+            handle: ".drag-handle",
+          }}
+          resizeConfig={{
+            enabled: editable,
+            handles: ["se"],
+          }}
           containerPadding={[0, 0]}
           margin={[16, 16]}
           onLayoutChange={(layout) => onLayoutChange?.(layout)}
         >
           {items.map((item) => (
-            <div key={item.id} className="relative">
+            <div key={item.id} className="relative h-full overflow-hidden">
               {editable && (
                 <div className="drag-handle absolute top-0 left-0 right-0 h-6 cursor-grab active:cursor-grabbing z-10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <span className="material-symbols-rounded text-[16px] text-hero-grey-regular">

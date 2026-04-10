@@ -6,6 +6,8 @@ import {
   executePreviewData,
   executeListDatasources,
   executeGetDataCatalog,
+  executeGetKnowledgeContext,
+  executeSaveKnowledge,
 } from "@/lib/ai/tools";
 
 export const dynamic = "force-dynamic";
@@ -56,27 +58,30 @@ async function persistConversation(
   }
 }
 
-const SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips).
+const SYSTEM_PROMPT = `Je bent de Hero AI Assistent. Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
 
-Mogelijkheden:
-- Maak staafdiagrammen, lijndiagrammen, taartdiagrammen, vlakdiagrammen, KPI-tegels, tabellen en meer
-- Bekijk beschikbare databronnen (data_sources)
-- Preview data via queries
-- Maak klips aan op basis van data
+STRENGE REGELS:
+- Gebruik UITSLUITEND data uit de gekoppelde databronnen. Verzin NOOIT data, feiten, of voorbeelden.
+- Als je iets niet weet of niet kunt opzoeken via de tools, zeg dat eerlijk. Maak GEEN aannames over het bedrijf, vestigingen, klanten of producten.
+- Elk feit dat je noemt MOET afkomstig zijn uit een query-resultaat of de kennisbank. Zonder bron, geen bewering.
 
-Richtlijnen:
-- Stel verhelderende vragen over welke data de gebruiker wil zien
+Werkwijze:
+1. Haal ALTIJD eerst de kennisbank op via get_knowledge_context voor bedrijfscontext
+2. Haal beschikbare databronnen op via list_datasources
+3. Gebruik get_data_catalog om de datastructuur te begrijpen
+4. Preview data met preview_data voordat je een klip aanmaakt
+5. Maak de klip aan met create_klip en bevestig dat het klaar is
+
+Opmaak:
+- Gebruik ALTIJD nette, leesbare Nederlandse namen (geen veldnamen met underscores)
+- Getallen worden automatisch geformateerd met punten bij duizendtallen
 - Stel geschikte grafiektypen voor op basis van de data
-- Gebruik altijd Nederlandse labels en beschrijvingen
-- Geef duidelijke uitleg bij elke stap
-- Gebruik ALTIJD nette, leesbare namen voor klips (bijv. "Omzet per Klant" niet "omzet_per_klant")
-- Gebruik in config nette beschrijvingen, geen technische veldnamen met underscores
-- Getallen worden automatisch geformateerd met punten bij duizendtallen (1.000.000)
-- Begin altijd met het ophalen van beschikbare databronnen, dan een data preview, en maak dan pas een klip aan
-- Maak het werk altijd helemaal af: verken de data, maak de klip aan, en bevestig dat het klaar is
-- Gebruik ALTIJD eerst get_data_catalog om de datastructuur te begrijpen voordat je queries schrijft
-- De catalog toont alle tabellen, kolommen, types en voorbeelddata
-- Gebruik de exacte tabel- en kolomnamen uit de catalog in je queries`;
+- Maak het werk altijd helemaal af
+
+Kennisbank:
+- Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge
+- Voorbeelden: "Wij hebben 5 vestigingen", "Onze fiscal year loopt van april tot maart", "KPI omzet target is 50M"
+- Categoriseer kennis correct (bedrijf, data, klanten, producten, processen, definities)`;
 
 const TOOLS: Anthropic.Messages.Tool[] = [
   {
@@ -211,6 +216,53 @@ const TOOLS: Anthropic.Messages.Tool[] = [
       required: ["data_source_id"],
     },
   },
+  {
+    name: "get_knowledge_context",
+    description:
+      "Haal alle bedrijfskennis op uit de kennisbank. Gebruik dit ALTIJD aan het begin van een gesprek om context te krijgen over het bedrijf, definities, en afspraken.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "save_knowledge",
+    description:
+      "Sla nieuwe bedrijfskennis op in de kennisbank. Gebruik dit wanneer de gebruiker feitelijke informatie deelt die relevant is voor toekomstige analyses.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: {
+          type: "string",
+          description: "Korte titel van het kennisitem",
+        },
+        content: {
+          type: "string",
+          description: "De volledige kennis/informatie",
+        },
+        category: {
+          type: "string",
+          enum: [
+            "algemeen",
+            "bedrijf",
+            "data",
+            "klanten",
+            "producten",
+            "processen",
+            "definities",
+          ],
+          description: "Categorie",
+        },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Relevante tags",
+        },
+      },
+      required: ["title", "content", "category"],
+    },
+  },
 ];
 
 /**
@@ -223,6 +275,11 @@ function summarizeToolResult(toolName: string, result: unknown): string {
       ? `catalog opgehaald (${result.split("\n").filter((l) => l.startsWith("Tabel:")).length} tabellen)`
       : "catalog opgehaald";
   }
+  if (toolName === "get_knowledge_context") {
+    return typeof result === "string"
+      ? `kennisbank opgehaald (${result.split("---").length} items)`
+      : "kennisbank opgehaald";
+  }
   if (!result || typeof result !== "object") return "voltooid";
   const r = result as Record<string, unknown>;
   switch (toolName) {
@@ -232,6 +289,8 @@ function summarizeToolResult(toolName: string, result: unknown): string {
       return `${r.row_count || "?"} rijen opgehaald`;
     case "create_klip":
       return `klip "${r.name || "?"}" aangemaakt`;
+    case "save_knowledge":
+      return `kennis "${r.title || "?"}" opgeslagen`;
     default:
       return "voltooid";
   }
@@ -401,6 +460,20 @@ export async function POST(request: Request) {
                       (
                         toolBlock.input as { data_source_id: string }
                       ).data_source_id
+                    );
+                    break;
+                  case "get_knowledge_context":
+                    result = await executeGetKnowledgeContext();
+                    break;
+                  case "save_knowledge":
+                    result = await executeSaveKnowledge(
+                      toolBlock.input as {
+                        title: string;
+                        content: string;
+                        category: string;
+                        tags?: string[];
+                      },
+                      user.id
                     );
                     break;
                   default:
