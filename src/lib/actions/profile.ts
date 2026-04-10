@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function getCurrentProfile() {
   const supabase = await createClient();
@@ -111,12 +112,14 @@ export async function updateUserRole(userId: string, role: string) {
   const validRoles = ['viewer', 'builder', 'admin'];
   if (!validRoles.includes(role)) throw new Error('Ongeldige rol');
 
-  const { error } = await supabase
+  // Use admin client to bypass RLS (up_update only allows self-update)
+  const admin = createAdminClient();
+  const { error } = await admin
     .from('user_profiles')
     .update({ role })
     .eq('id', userId);
 
   if (error) throw new Error(error.message);
 
-  revalidatePath('/settings');
+  revalidatePath('/admin');
 }
