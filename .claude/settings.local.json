@@ -1,41 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh repo:*)",
-      "mcp__plugin_supabase_supabase__list_organizations",
-      "mcp__plugin_supabase_supabase__get_cost",
-      "mcp__plugin_supabase_supabase__confirm_cost",
-      "mcp__plugin_supabase_supabase__create_project",
-      "mcp__plugin_supabase_supabase__get_project",
-      "Bash(railway --version)",
-      "Bash(railway whoami:*)",
-      "Bash(railway init:*)",
-      "Bash(railway workspace:*)",
-      "Bash(railway --help)",
-      "Bash(railway list:*)",
-      "Bash(railway service:*)",
-      "Bash(railway add:*)",
-      "Bash(railway open:*)",
-      "Bash(railway status:*)",
-      "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias \"@/*\" --use-npm --eslint)",
-      "Bash(rm package.json)",
-      "Bash(npx create-next-app@latest hero-dashboards --typescript --tailwind --app --src-dir --import-alias \"@/*\" --use-npm --eslint)",
-      "Bash(cp -r hero-dashboards/* .)",
-      "Bash(cp hero-dashboards/.gitignore .gitignore)",
-      "Bash(cp hero-dashboards/.eslintrc.json .)",
-      "Bash(cp -r hero-dashboards/.next .)",
-      "Bash(shopt -s dotglob)",
-      "Bash(cp -rn hero-dashboards/* .)",
-      "Bash(cp -rn hero-dashboards/.* .)",
-      "Bash(cp hero-dashboards/package.json .)",
-      "Bash(cp hero-dashboards/package-lock.json .)",
-      "Bash(cp hero-dashboards/tsconfig.json .)",
-      "Bash(cp hero-dashboards/postcss.config.mjs .)",
-      "Bash(cp -r hero-dashboards/src .)",
-      "Bash(npm install:*)",
-      "mcp__plugin_supabase_supabase__apply_migration",
-      "mcp__plugin_supabase_supabase__get_publishable_keys",
-      "mcp__plugin_supabase_supabase__execute_sql"
+      "Bash(*)",
+      "Write",
+      "Edit",
+      "mcp__plugin_supabase_supabase__*"
     ]
   }
 }

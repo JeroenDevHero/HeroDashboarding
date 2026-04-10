@@ -1,26 +1,46 @@
-export default function KlipsPage() {
+import Link from "next/link";
+import { getKlips } from "@/lib/actions/klip";
+import KlipCard from "@/components/klip/KlipCard";
+import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+
+export default async function KlipsPage() {
+  const klips = await getKlips();
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-hero-grey-black">Klips</h1>
-        <a
-          href="/ai"
-          className="flex items-center gap-1 rounded-[var(--radius-button)] bg-hero-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-hero-orange/90"
-        >
-          <span className="material-symbols-rounded text-[18px]">
-            smart_toy
-          </span>
-          Nieuwe klip via AI
-        </a>
+        <Link href="/ai">
+          <Button icon="smart_toy">Nieuwe klip via AI</Button>
+        </Link>
       </div>
-      <div className="rounded-[var(--radius-card)] bg-white p-12 text-center shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
-        <span className="material-symbols-rounded text-[48px] text-hero-grey-light">
-          bar_chart
-        </span>
-        <p className="mt-3 text-sm text-hero-grey-regular">
-          Nog geen klips. Gebruik de AI Assistent om je eerste klip te maken.
-        </p>
-      </div>
+
+      {klips.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon="bar_chart"
+            title="Nog geen klips"
+            description="Gebruik de AI Assistent om je eerste klip te maken."
+            action={
+              <Link href="/ai">
+                <Button variant="secondary" icon="smart_toy">
+                  Naar AI Assistent
+                </Button>
+              </Link>
+            }
+          />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {klips.map((klip) => (
+            <Link key={klip.id} href={`/klips/${klip.id}`} className="block">
+              <KlipCard klip={klip} />
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
