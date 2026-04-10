@@ -244,145 +244,144 @@ export async function POST(request: Request) {
 
     // Build SSE stream
     const encoder = new TextEncoder();
+    const MAX_TOOL_ROUNDS = 5;
+
     const readable = new ReadableStream({
       async start(controller) {
         const createdKlipIds: string[] = [];
         const allMessages = [...messages]; // Track messages for persistence
 
         try {
-          for await (const event of stream) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+          let currentMessages: Anthropic.Messages.MessageParam[] = [...anthropicMessages];
+          let currentStream = stream;
+
+          for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+            // Stream events from the current stream to the client
+            for await (const event of currentStream) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+              );
+            }
+
+            const finalMessage = await currentStream.finalMessage();
+
+            // Check if there are tool_use content blocks
+            const toolUseBlocks = finalMessage.content.filter(
+              (block): block is Anthropic.Messages.ToolUseBlock =>
+                block.type === "tool_use"
             );
 
-            // If we get a message_stop, check for tool use and execute tools
-            if (event.type === "message_stop") {
-              const finalMessage = await stream.finalMessage();
+            if (toolUseBlocks.length === 0) {
+              // No more tools needed - collect text for persistence
+              const textBlocks = finalMessage.content.filter(
+                (block): block is Anthropic.Messages.TextBlock =>
+                  block.type === "text"
+              );
+              if (textBlocks.length > 0) {
+                allMessages.push({
+                  role: "assistant",
+                  content: textBlocks.map((b) => b.text).join(""),
+                });
+              }
+              break;
+            }
 
-              // Check if there are tool_use content blocks
-              const toolUseBlocks = finalMessage.content.filter(
-                (block): block is Anthropic.Messages.ToolUseBlock =>
-                  block.type === "tool_use"
+            // Send custom event so client knows tools are being executed
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "tool_execution_start",
+                  tools: toolUseBlocks.map((t) => t.name),
+                })}\n\n`
+              )
+            );
+
+            // Execute each tool call
+            const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
+
+            for (const toolBlock of toolUseBlocks) {
+              let result: unknown;
+              let isError = false;
+
+              try {
+                switch (toolBlock.name) {
+                  case "create_klip":
+                    result = await executeCreateKlip(
+                      toolBlock.input as Parameters<
+                        typeof executeCreateKlip
+                      >[0],
+                      user.id,
+                      conversationId
+                    );
+                    // Track created klip IDs for conversation persistence
+                    if (
+                      result &&
+                      typeof result === "object" &&
+                      "id" in (result as Record<string, unknown>)
+                    ) {
+                      createdKlipIds.push(
+                        (result as Record<string, unknown>).id as string
+                      );
+                    }
+                    break;
+                  case "preview_data":
+                    result = await executePreviewData(
+                      toolBlock.input as Parameters<
+                        typeof executePreviewData
+                      >[0],
+                      user.id
+                    );
+                    break;
+                  case "list_datasources":
+                    result = await executeListDatasources(user.id);
+                    break;
+                  default:
+                    result = { error: `Onbekende tool: ${toolBlock.name}` };
+                    isError = true;
+                }
+              } catch (error) {
+                result = {
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : "Onbekende fout bij uitvoering",
+                };
+                isError = true;
+              }
+
+              // Send progress event per tool
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_execution_result",
+                    tool_name: toolBlock.name,
+                    success: !isError,
+                  })}\n\n`
+                )
               );
 
-              if (toolUseBlocks.length > 0) {
-                // Execute each tool call
-                const toolResults: Anthropic.Messages.ToolResultBlockParam[] =
-                  [];
-
-                for (const toolBlock of toolUseBlocks) {
-                  let result: unknown;
-                  let isError = false;
-
-                  try {
-                    switch (toolBlock.name) {
-                      case "create_klip":
-                        result = await executeCreateKlip(
-                          toolBlock.input as Parameters<
-                            typeof executeCreateKlip
-                          >[0],
-                          user.id,
-                          conversationId
-                        );
-                        // Track created klip IDs for conversation persistence
-                        if (
-                          result &&
-                          typeof result === "object" &&
-                          "id" in (result as Record<string, unknown>)
-                        ) {
-                          createdKlipIds.push(
-                            (result as Record<string, unknown>).id as string
-                          );
-                        }
-                        break;
-                      case "preview_data":
-                        result = await executePreviewData(
-                          toolBlock.input as Parameters<
-                            typeof executePreviewData
-                          >[0],
-                          user.id
-                        );
-                        break;
-                      case "list_datasources":
-                        result = await executeListDatasources(user.id);
-                        break;
-                      default:
-                        result = { error: `Onbekende tool: ${toolBlock.name}` };
-                        isError = true;
-                    }
-                  } catch (error) {
-                    result = {
-                      error:
-                        error instanceof Error
-                          ? error.message
-                          : "Onbekende fout bij uitvoering",
-                    };
-                    isError = true;
-                  }
-
-                  toolResults.push({
-                    type: "tool_result",
-                    tool_use_id: toolBlock.id,
-                    content: JSON.stringify(result),
-                    is_error: isError,
-                  });
-                }
-
-                // Continue the conversation with tool results
-                const continuationMessages: Anthropic.Messages.MessageParam[] =
-                  [
-                    ...anthropicMessages,
-                    { role: "assistant" as const, content: finalMessage.content },
-                    { role: "user" as const, content: toolResults },
-                  ];
-
-                const continuationStream = await anthropic.messages.stream({
-                  model: "claude-sonnet-4-20250514",
-                  max_tokens: 4096,
-                  system: SYSTEM_PROMPT,
-                  tools: TOOLS,
-                  messages: continuationMessages,
-                });
-
-                let continuationText = "";
-                for await (const contEvent of continuationStream) {
-                  controller.enqueue(
-                    encoder.encode(
-                      `data: ${JSON.stringify(contEvent)}\n\n`
-                    )
-                  );
-                  // Collect final assistant text for persistence
-                  if (
-                    contEvent.type === "content_block_delta" &&
-                    "delta" in contEvent &&
-                    contEvent.delta.type === "text_delta" &&
-                    "text" in contEvent.delta
-                  ) {
-                    continuationText += contEvent.delta.text;
-                  }
-                }
-
-                // Add assistant response to messages for persistence
-                if (continuationText) {
-                  allMessages.push({
-                    role: "assistant",
-                    content: continuationText,
-                  });
-                }
-              } else {
-                // No tool use - collect the text content for persistence
-                const textBlocks = finalMessage.content.filter(
-                  (block): block is Anthropic.Messages.TextBlock =>
-                    block.type === "text"
-                );
-                if (textBlocks.length > 0) {
-                  allMessages.push({
-                    role: "assistant",
-                    content: textBlocks.map((b) => b.text).join(""),
-                  });
-                }
-              }
+              toolResults.push({
+                type: "tool_result",
+                tool_use_id: toolBlock.id,
+                content: JSON.stringify(result),
+                is_error: isError,
+              });
             }
+
+            // Continue conversation with tool results
+            currentMessages = [
+              ...currentMessages,
+              { role: "assistant" as const, content: finalMessage.content },
+              { role: "user" as const, content: toolResults },
+            ];
+
+            currentStream = await anthropic.messages.stream({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 4096,
+              system: SYSTEM_PROMPT,
+              tools: TOOLS,
+              messages: currentMessages,
+            });
           }
 
           // Persist conversation to ai_conversations table

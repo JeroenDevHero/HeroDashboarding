@@ -9,7 +9,7 @@ import KlipChart from "@/components/klip/KlipChart";
 import ChatMessage from "./ChatMessage";
 
 export default function AIChat() {
-  const { messages, isLoading, sendMessage, clearMessages } = useAIChat();
+  const { messages, isLoading, toolStatus, sendMessage, clearMessages } = useAIChat();
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -108,10 +108,24 @@ export default function AIChat() {
                   <ChatMessage key={msg.id} message={msg} />
                 ))}
 
-                {/* Typing indicator when loading and last message is from user */}
+                {/* Tool execution indicator */}
+                {isLoading && toolStatus?.executing && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl rounded-bl-md bg-hero-blue-hairline px-4 py-2.5">
+                      <div className="flex items-center gap-2 text-xs text-hero-blue">
+                        <span className="material-symbols-rounded text-[16px] animate-spin">progress_activity</span>
+                        <span>{getToolLabel(toolStatus.currentTool)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Typing indicator when loading and assistant hasn't started producing text yet */}
                 {isLoading &&
+                  !toolStatus?.executing &&
                   messages.length > 0 &&
-                  messages[messages.length - 1].role === "user" && (
+                  (messages[messages.length - 1].role === "user" ||
+                    messages[messages.length - 1].content === "") && (
                     <div className="flex justify-start">
                       <div className="rounded-2xl rounded-bl-md bg-white px-4 py-2.5 shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
                         <div className="flex items-center gap-1.5">
@@ -170,6 +184,23 @@ export default function AIChat() {
       </div>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Helper: human-readable label for tool execution status             */
+/* ------------------------------------------------------------------ */
+
+function getToolLabel(tool: string | null): string {
+  switch (tool) {
+    case "list_datasources":
+      return "Databronnen ophalen...";
+    case "preview_data":
+      return "Data opvragen...";
+    case "create_klip":
+      return "Klip aanmaken...";
+    default:
+      return "Bezig...";
+  }
 }
 
 /* ------------------------------------------------------------------ */

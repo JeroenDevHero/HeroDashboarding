@@ -15,6 +15,11 @@ export interface ChatMessage {
   toolCalls?: ToolCall[];
 }
 
+export interface ToolStatus {
+  executing: boolean;
+  currentTool: string | null;
+}
+
 interface StreamEvent {
   type: string;
   index?: number;
@@ -39,6 +44,10 @@ function generateId(): string {
 export function useAIChat(conversationId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [toolStatus, setToolStatus] = useState<ToolStatus>({
+    executing: false,
+    currentTool: null,
+  });
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
@@ -189,6 +198,24 @@ export function useAIChat(conversationId?: string) {
                   }
                   break;
                 }
+
+                case "tool_execution_start": {
+                  const tools = (event as unknown as { tools: string[] }).tools;
+                  setToolStatus({
+                    executing: true,
+                    currentTool: tools?.[0] ?? null,
+                  });
+                  break;
+                }
+
+                case "tool_execution_result": {
+                  const toolName = (event as unknown as { tool_name: string }).tool_name;
+                  setToolStatus({
+                    executing: false,
+                    currentTool: toolName,
+                  });
+                  break;
+                }
               }
             } catch {
               // Skip unparseable events
@@ -215,6 +242,7 @@ export function useAIChat(conversationId?: string) {
         );
       } finally {
         setIsLoading(false);
+        setToolStatus({ executing: false, currentTool: null });
         abortControllerRef.current = null;
       }
     },
@@ -230,5 +258,5 @@ export function useAIChat(conversationId?: string) {
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, sendMessage, clearMessages };
+  return { messages, isLoading, toolStatus, sendMessage, clearMessages };
 }
