@@ -49,15 +49,25 @@ export interface PreviewDataInput {
 export async function executeCreateKlip(
   input: CreateKlipInput,
   userId: string,
-  conversationId?: string
+  conversationId?: string,
+  previewData?: unknown
 ) {
   const supabase = createAdminClient();
+
+  // Merge sample_data into config when preview data is available
+  const config: Record<string, unknown> = {
+    ...(input.config || {}),
+  };
+
+  if (previewData && typeof previewData === 'object' && 'rows' in (previewData as Record<string, unknown>)) {
+    config.sample_data = (previewData as Record<string, unknown>).rows;
+  }
 
   const insertData: Record<string, unknown> = {
     name: input.name,
     type: input.type,
     description: input.description || null,
-    config: input.config || {},
+    config,
     created_by: userId,
     ai_generated: true,
     ai_prompt: input.ai_prompt || null,

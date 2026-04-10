@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import KlipDetailActions from "./KlipDetailActions";
+import KlipChartWrapper from "./KlipChartWrapper";
 
 const typeBadgeVariant: Record<
   string,
@@ -67,14 +68,38 @@ export default async function KlipDetailPage({
         <KlipDetailActions klipId={klip.id} />
       </div>
 
-      {/* Placeholder for chart -- data comes from query execution, not cached on klip */}
+      {/* Chart visualisation -- renders sample_data from config when available */}
       <Card className="mb-6">
         <div className="min-h-[320px]">
-          <EmptyState
-            icon="bar_chart"
-            title="Visualisatie"
-            description="Koppel een query en voer deze uit om data te laden."
-          />
+          {(() => {
+            const sampleData = (klip.config as Record<string, unknown>)?.sample_data as Record<string, unknown>[] | undefined;
+            if (sampleData && sampleData.length > 0) {
+              const cfg = klip.config as Record<string, unknown>;
+              return (
+                <KlipChartWrapper
+                  type={klip.type}
+                  data={sampleData}
+                  config={{
+                    x_field: cfg.x_field as string | undefined,
+                    y_field: cfg.y_field as string | undefined,
+                    colors: cfg.colors as string[] | undefined,
+                    show_legend: (cfg.show_legend as boolean) ?? false,
+                    show_grid: (cfg.show_grid as boolean) ?? true,
+                    prefix: cfg.prefix as string | undefined,
+                    suffix: cfg.suffix as string | undefined,
+                    columns: cfg.columns as { key: string; label: string }[] | undefined,
+                  }}
+                />
+              );
+            }
+            return (
+              <EmptyState
+                icon="bar_chart"
+                title="Visualisatie"
+                description="Koppel een query en voer deze uit om data te laden."
+              />
+            );
+          })()}
         </div>
       </Card>
 

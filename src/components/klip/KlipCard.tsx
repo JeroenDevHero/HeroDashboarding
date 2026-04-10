@@ -15,6 +15,8 @@ interface KlipConfig {
   prefix?: string;
   suffix?: string;
   columns?: { key: string; label: string }[];
+  sample_data?: Record<string, unknown>[];
+  [key: string]: unknown;
 }
 
 interface Klip {
@@ -52,6 +54,8 @@ const chartTypeMap: Record<string, "bar" | "line" | "pie" | "area" | "number" | 
 
 export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
   const renderType = chartTypeMap[klip.type] ?? "bar";
+  const sampleData = klip.config?.sample_data;
+  const hasData = sampleData && sampleData.length > 0;
 
   const headerAction = (
     <div className="flex items-center gap-1">
@@ -73,11 +77,30 @@ export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
       className="h-full flex flex-col"
     >
       <div className="flex-1 min-h-0">
-        <EmptyState
-          icon="bar_chart"
-          title="Geen data"
-          description="Koppel een databron en voer een query uit om deze klip te vullen."
-        />
+        {hasData ? (
+          <div className="h-full min-h-[120px]">
+            <KlipChart
+              type={renderType}
+              data={sampleData}
+              config={{
+                x_field: klip.config.x_field,
+                y_field: klip.config.y_field,
+                colors: klip.config.colors,
+                show_legend: klip.config.show_legend ?? false,
+                show_grid: klip.config.show_grid ?? true,
+                prefix: klip.config.prefix,
+                suffix: klip.config.suffix,
+                columns: klip.config.columns,
+              }}
+            />
+          </div>
+        ) : (
+          <EmptyState
+            icon="bar_chart"
+            title="Geen data"
+            description="Koppel een databron om deze klip te vullen."
+          />
+        )}
       </div>
     </Card>
   );

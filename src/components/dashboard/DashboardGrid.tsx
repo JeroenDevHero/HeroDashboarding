@@ -19,6 +19,8 @@ interface KlipConfig {
   prefix?: string;
   suffix?: string;
   columns?: { key: string; label: string }[];
+  sample_data?: Record<string, unknown>[];
+  [key: string]: unknown;
 }
 
 interface Klip {

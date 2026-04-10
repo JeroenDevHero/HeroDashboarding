@@ -249,6 +249,7 @@ export async function POST(request: Request) {
     const readable = new ReadableStream({
       async start(controller) {
         const createdKlipIds: string[] = [];
+        let lastPreviewResult: unknown = null; // Track preview data across tool rounds
         const allMessages = [...messages]; // Track messages for persistence
 
         try {
@@ -311,7 +312,8 @@ export async function POST(request: Request) {
                         typeof executeCreateKlip
                       >[0],
                       user.id,
-                      conversationId
+                      conversationId,
+                      lastPreviewResult
                     );
                     // Track created klip IDs for conversation persistence
                     if (
@@ -331,6 +333,8 @@ export async function POST(request: Request) {
                       >[0],
                       user.id
                     );
+                    // Track preview data so create_klip can attach it
+                    if (result && !isError) lastPreviewResult = result;
                     break;
                   case "list_datasources":
                     result = await executeListDatasources(user.id);
