@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  testDatabricksConnection,
+  type DatabricksConfig,
+} from '@/lib/datasources/databricks';
 
 export async function getDataSources() {
   const supabase = await createClient();
@@ -152,8 +157,19 @@ export async function testDataSourceConnection(id: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
-  // Fetch the data source with its type
-  const { data: dataSource, error: fetchError } = await supabase
+  // Verify the user owns this data source (RLS-safe query)
+  const { data: owned, error: ownedError } = await supabase
+    .from('data_sources')
+    .select('id')
+    .eq('id', id)
+    .eq('created_by', user.id)
+    .single();
+
+  if (ownedError || !owned) throw new Error('Databron niet gevonden');
+
+  // Fetch full config with admin client (bypasses RLS, includes secrets)
+  const admin = createAdminClient();
+  const { data: dataSource, error: fetchError } = await admin
     .from('data_sources')
     .select(
       `
@@ -162,35 +178,37 @@ export async function testDataSourceConnection(id: string) {
     `
     )
     .eq('id', id)
-    .eq('created_by', user.id)
     .single();
 
   if (fetchError || !dataSource) throw new Error('Databron niet gevonden');
 
-  // Test the connection via edge function
-  const { data: result, error: testError } = await supabase.functions.invoke(
-    'test-datasource',
-    {
-      body: {
-        datasource_id: dataSource.id,
-        type_slug: dataSource.data_source_type?.slug,
-        connection_config: dataSource.connection_config,
-      },
+  // Test the connection based on type slug
+  const typeSlug = dataSource.data_source_type?.slug;
+  let testResult: { success: boolean; message: string };
+
+  switch (typeSlug) {
+    case 'databricks': {
+      const config = dataSource.connection_config as DatabricksConfig;
+      testResult = await testDatabricksConnection(config);
+      break;
     }
-  );
+    default: {
+      testResult = {
+        success: false,
+        message: `Niet-ondersteund type: ${typeSlug}`,
+      };
+    }
+  }
 
-  const newStatus = testError ? 'error' : 'success';
-  const statusMessage = testError
-    ? `Verbinding mislukt: ${testError.message}`
-    : 'Verbinding succesvol';
+  const newStatus = testResult.success ? 'success' : 'error';
 
-  // Update the data source status
-  const { error: updateError } = await supabase
+  // Update the data source status using admin client
+  const { error: updateError } = await admin
     .from('data_sources')
     .update({
       last_refresh_status: newStatus,
       last_refresh_at: new Date().toISOString(),
-      last_refresh_error: testError ? testError.message : null,
+      last_refresh_error: testResult.success ? null : testResult.message,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);
@@ -199,5 +217,5 @@ export async function testDataSourceConnection(id: string) {
 
   revalidatePath('/datasources');
 
-  return { status: newStatus, message: statusMessage, details: result };
+  return { status: newStatus, message: testResult.message };
 }

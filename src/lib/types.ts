@@ -69,11 +69,20 @@ export interface CsvConfig {
   has_header?: boolean;
 }
 
+export interface DatabricksConfig {
+  server_hostname: string;
+  http_path: string;
+  access_token: string;
+  catalog?: string;
+  schema?: string;
+}
+
 export type ConnectionConfig =
   | PostgresConfig
   | RestApiConfig
   | GoogleSheetsConfig
   | CsvConfig
+  | DatabricksConfig
   | Record<string, unknown>;
 
 export interface KlipConfig {

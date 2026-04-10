@@ -1,4 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  executeDatabricksQuery,
+  type DatabricksConfig,
+} from "@/lib/datasources/databricks";
 
 /** Valid klip_type enum values matching the Postgres enum */
 export type KlipType =
@@ -89,11 +93,16 @@ export async function executePreviewData(
   const supabase = createAdminClient();
   const limit = input.limit ?? 10;
 
-  // If a data_source_id is provided, verify the data source exists
+  // If a data_source_id is provided, execute against that external data source
   if (input.data_source_id) {
     const { data: dataSource, error: dsError } = await supabase
       .from("data_sources")
-      .select("id, name, is_active")
+      .select(
+        `
+        *,
+        data_source_type:data_source_types (*)
+      `
+      )
       .eq("id", input.data_source_id)
       .single();
 
@@ -104,9 +113,33 @@ export async function executePreviewData(
     if (!dataSource.is_active) {
       throw new Error("Databron is niet actief");
     }
+
+    const typeSlug = dataSource.data_source_type?.slug;
+
+    switch (typeSlug) {
+      case "databricks": {
+        const config = dataSource.connection_config as DatabricksConfig;
+        const rows = await executeDatabricksQuery(config, input.query, limit);
+        const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+        return {
+          rows,
+          columns,
+          row_count: rows.length,
+          limited_to: limit,
+        };
+      }
+
+      case "postgresql": {
+        throw new Error("PostgreSQL wordt binnenkort ondersteund");
+      }
+
+      default: {
+        throw new Error(`Niet-ondersteund databrontype: ${typeSlug}`);
+      }
+    }
   }
 
-  // Execute the query with a LIMIT to prevent excessive data retrieval
+  // Fallback: no data_source_id provided, try Supabase RPC for local queries
   const safeQuery = input.query.replace(/;\s*$/, "");
   const limitedQuery = `SELECT * FROM (${safeQuery}) AS _preview LIMIT ${limit}`;
 

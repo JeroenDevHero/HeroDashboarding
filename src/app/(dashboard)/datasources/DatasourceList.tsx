@@ -31,6 +31,7 @@ const typeLabels: Record<string, string> = {
   rest_api: "REST API",
   google_sheets: "Google Sheets",
   csv: "CSV",
+  databricks: "Databricks",
 };
 
 const statusVariant: Record<string, "info" | "success" | "warning" | "error"> = {

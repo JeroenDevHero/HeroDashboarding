@@ -33,6 +33,12 @@ const datasourceTypes = [
     icon: "description",
     description: "Upload of link naar een CSV bestand",
   },
+  {
+    value: "databricks",
+    label: "Databricks",
+    icon: "storage",
+    description: "Verbind met een Databricks SQL warehouse",
+  },
 ];
 
 export default function NewDatasourcePage() {
@@ -160,6 +166,7 @@ export default function NewDatasourcePage() {
             {selectedType === "rest_api" && <RestApiFields />}
             {selectedType === "google_sheets" && <GoogleSheetsFields />}
             {selectedType === "csv" && <CsvFields />}
+            {selectedType === "databricks" && <DatabricksFields />}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -304,6 +311,43 @@ function CsvFields() {
   );
 }
 
+function DatabricksFields() {
+  return (
+    <>
+      <Input
+        label="Server Hostname"
+        name="server_hostname"
+        placeholder="adb-1234567890.1.azuredatabricks.net"
+        required
+      />
+      <Input
+        label="HTTP Pad"
+        name="http_path"
+        placeholder="/sql/1.0/warehouses/abc123"
+        required
+      />
+      <Input
+        label="Access Token"
+        name="access_token"
+        type="password"
+        required
+      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          label="Catalogus"
+          name="catalog"
+          placeholder="main"
+        />
+        <Input
+          label="Schema"
+          name="schema"
+          placeholder="default"
+        />
+      </div>
+    </>
+  );
+}
+
 function parseJsonField(value: string | null): unknown {
   if (!value) return null;
   try {
@@ -345,6 +389,14 @@ function parseConfigFromForm(
       return {
         url: formData.get("url") as string | null,
         delimiter: (formData.get("delimiter") as string) || ",",
+      };
+    case "databricks":
+      return {
+        server_hostname: formData.get("server_hostname") as string,
+        http_path: formData.get("http_path") as string,
+        access_token: formData.get("access_token") as string,
+        catalog: (formData.get("catalog") as string) || "main",
+        schema: (formData.get("schema") as string) || "default",
       };
     default:
       return {};
