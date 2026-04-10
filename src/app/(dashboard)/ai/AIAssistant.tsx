@@ -201,6 +201,7 @@ export default function AIAssistant({ initialConversations }: AIAssistantProps) 
             conversationId={activeConversationId}
             initialMessages={activeMessages}
             onFirstMessage={handleFirstMessage}
+            onToolCallUpdate={(tc) => setPreviewToolCall(tc)}
           />
         )}
 
@@ -249,23 +250,25 @@ function findLastKlipToolCall(messages: ChatMessage[]): ToolCall | null {
 
 function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
   const input = toolCall.input;
+  const resultData = toolCall.result as Record<string, unknown> | undefined;
 
   if (toolCall.name === "create_klip") {
-    const chartType = (input.chart_type as string) || (input.type as string) || "bar";
-    const data = (input.data as Record<string, unknown>[]) || [];
-    const config = (input.config as Record<string, unknown>) || {};
-    const title = (input.title as string) || (input.name as string) || "Klip preview";
+    // The result is the created klip object from Supabase
+    const config = (resultData?.config || input.config || {}) as Record<string, unknown>;
+    const sampleData = (config.sample_data as Record<string, unknown>[]) || [];
+    const chartType = (resultData?.type as string) || (input.type as string) || "bar";
+    const title = (resultData?.name as string) || (input.name as string) || "Klip preview";
 
     return (
       <div className="flex flex-1 flex-col p-5">
         <h3 className="mb-4 text-sm font-semibold text-hero-grey-black">
           {title}
         </h3>
-        <div className="min-h-0 flex-1">
-          {data.length > 0 ? (
+        <div style={{ width: "100%", height: 300 }}>
+          {sampleData.length > 0 ? (
             <KlipChart
               type={chartType as "bar" | "line" | "pie" | "area" | "number" | "table"}
-              data={data}
+              data={sampleData}
               config={{
                 x_field: (config.x_field as string) || (input.x_field as string),
                 y_field: (config.y_field as string) || (input.y_field as string),
@@ -274,11 +277,22 @@ function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
                 show_grid: (config.show_grid as boolean) ?? true,
               }}
             />
-          ) : (
+          ) : !resultData ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-hero-grey-regular">
                 Klip wordt voorbereid...
               </p>
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <span className="material-symbols-rounded text-[32px] text-hero-green">
+                  check_circle
+                </span>
+                <p className="mt-2 text-sm text-hero-grey-regular">
+                  Klip succesvol aangemaakt!
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -287,10 +301,8 @@ function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
   }
 
   if (toolCall.name === "preview_data") {
-    const rows =
-      (input.data as Record<string, unknown>[]) ||
-      (input.rows as Record<string, unknown>[]) ||
-      [];
+    // Data rows come from the tool result, not the tool input
+    const rows = (resultData?.rows as Record<string, unknown>[]) || [];
     const query = (input.query as string) || "";
 
     return (
@@ -333,6 +345,17 @@ function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
                 ))}
               </tbody>
             </table>
+          ) : !resultData ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-rounded text-[16px] animate-spin text-hero-blue">
+                  progress_activity
+                </span>
+                <p className="text-sm text-hero-grey-regular">
+                  Data wordt opgehaald...
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-hero-grey-regular">

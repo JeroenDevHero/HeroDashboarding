@@ -6,6 +6,7 @@ export interface ToolCall {
   id: string;
   name: string;
   input: Record<string, unknown>;
+  result?: unknown;
 }
 
 export interface ChatMessage {
@@ -35,6 +36,10 @@ interface StreamEvent {
     text?: string;
     partial_json?: string;
   };
+  tool_use_id?: string;
+  tool_name?: string;
+  result?: unknown;
+  is_error?: boolean;
 }
 
 function generateId(): string {
@@ -215,6 +220,29 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
                     executing: false,
                     currentTool: toolName,
                   });
+                  break;
+                }
+
+                case "tool_result": {
+                  const toolUseId = event.tool_use_id;
+                  const toolResult = event.result;
+                  if (toolUseId) {
+                    // Find and update the matching tool call with its result
+                    const updatedToolCalls = toolCalls.map((tc) =>
+                      tc.id === toolUseId ? { ...tc, result: toolResult } : tc
+                    );
+                    // Replace toolCalls array contents
+                    toolCalls.length = 0;
+                    toolCalls.push(...updatedToolCalls);
+
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMessageId
+                          ? { ...msg, toolCalls: [...toolCalls] }
+                          : msg
+                      )
+                    );
+                  }
                   break;
                 }
               }

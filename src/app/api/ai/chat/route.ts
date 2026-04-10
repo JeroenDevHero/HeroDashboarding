@@ -428,6 +428,19 @@ export async function POST(request: Request) {
                 )
               );
 
+              // Send tool result to client for preview
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_result",
+                    tool_use_id: toolBlock.id,
+                    tool_name: toolBlock.name,
+                    result: result,
+                    is_error: isError,
+                  })}\n\n`
+                )
+              );
+
               toolResults.push({
                 type: "tool_result",
                 tool_use_id: toolBlock.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAIChat } from "@/lib/hooks/useAIChat";
 import type { ChatMessage as ChatMessageType, ToolCall } from "@/lib/hooks/useAIChat";
 import Button from "@/components/ui/Button";
@@ -13,6 +13,7 @@ interface AIChatProps {
   initialMessages: ChatMessageType[];
   onConversationCreated?: (id: string) => void;
   onFirstMessage?: (conversationId: string, content: string) => void;
+  onToolCallUpdate?: (toolCall: ToolCall) => void;
 }
 
 export default function AIChat({
@@ -20,6 +21,7 @@ export default function AIChat({
   initialMessages,
   onConversationCreated,
   onFirstMessage,
+  onToolCallUpdate,
 }: AIChatProps) {
   const { messages, isLoading, toolStatus, sendMessage, clearMessages, setMessages } =
     useAIChat(conversationId || undefined, initialMessages);
@@ -80,23 +82,14 @@ export default function AIChat({
   );
 
   // Expose last klip tool call for parent to use in preview panel
-  const lastKlipToolCall = (() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i];
-      if (msg.toolCalls) {
-        for (let j = msg.toolCalls.length - 1; j >= 0; j--) {
-          const tc = msg.toolCalls[j];
-          if (tc.name === "create_klip" || tc.name === "preview_data") {
-            return tc;
-          }
-        }
-      }
-    }
-    return null;
-  })();
+  const lastKlipToolCall = useMemo(() => getLastKlipToolCall(messages), [messages]);
 
-  // Make lastKlipToolCall available to parent via a ref-like pattern
-  // We'll expose it through a callback in the parent instead
+  // Notify parent of tool call changes for preview
+  useEffect(() => {
+    if (onToolCallUpdate && lastKlipToolCall) {
+      onToolCallUpdate(lastKlipToolCall);
+    }
+  }, [messages, onToolCallUpdate, lastKlipToolCall]);
 
   return (
     <div className="flex flex-1 flex-col rounded-[var(--radius-card)] bg-white shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
