@@ -70,7 +70,7 @@ export async function getDataSourceTypes() {
 
 export async function createDataSource(data: {
   name: string;
-  type_id: string;
+  type_id: string; // accepts either a UUID or a slug (e.g. "databricks")
   description?: string;
   connection_config: Record<string, unknown>;
   refresh_interval_seconds?: number;
@@ -81,11 +81,24 @@ export async function createDataSource(data: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Niet ingelogd');
 
+  // Resolve type_id: if it's not a UUID, look it up by slug
+  let resolvedTypeId = data.type_id;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.type_id);
+  if (!isUuid) {
+    const { data: dsType, error: typeError } = await supabase
+      .from('data_source_types')
+      .select('id')
+      .eq('slug', data.type_id)
+      .single();
+    if (typeError || !dsType) throw new Error(`Onbekend databron type: ${data.type_id}`);
+    resolvedTypeId = dsType.id;
+  }
+
   const { data: dataSource, error } = await supabase
     .from('data_sources')
     .insert({
       name: data.name,
-      type_id: data.type_id,
+      type_id: resolvedTypeId,
       description: data.description || null,
       connection_config: data.connection_config,
       refresh_interval_seconds: data.refresh_interval_seconds ?? 3600,
