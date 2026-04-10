@@ -4,7 +4,8 @@
       "Bash(*)",
       "Write",
       "Edit",
-      "mcp__plugin_supabase_supabase__*"
+      "mcp__plugin_supabase_supabase__*",
+      "WebFetch(domain:apidocs.klipfolio.com)"
     ]
   }
 }

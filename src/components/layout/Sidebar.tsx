@@ -11,6 +11,7 @@ const navItems = [
   { href: "/datasources", icon: "database", label: "Databronnen", roles: ["admin", "builder"] },
   { href: "/ai", icon: "smart_toy", label: "AI Assistent" },
   { href: "/knowledge", icon: "library_books", label: "Kennisbank" },
+  { href: "/klipfolio", icon: "swap_horiz", label: "Klipfolio", roles: ["admin", "builder"] },
   { href: "/admin", icon: "settings", label: "Beheer", roles: ["admin"] },
 ];
 
