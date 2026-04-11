@@ -9,10 +9,16 @@ export interface ToolCall {
   result?: unknown;
 }
 
+export interface ImageAttachment {
+  base64: string;
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  images?: ImageAttachment[];
   toolCalls?: ToolCall[];
 }
 
@@ -83,7 +89,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
   );
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, images?: ImageAttachment[]) => {
       if (!content.trim() || isLoading) return;
 
       // Remember the last user message so we can retry it
@@ -93,6 +99,7 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
         id: generateId(),
         role: "user",
         content: content.trim(),
+        ...(images && images.length > 0 ? { images } : {}),
       };
 
       setMessages((prev) => [...prev, userMessage]);
@@ -102,10 +109,24 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
 
       // Build the messages array for the API (all messages in conversation)
       // Include tool_calls so the server can recover preview data and context
+      // For messages with images, send as multi-content array (Anthropic vision format)
+      const buildContent = (msg: ChatMessage) => {
+        if (msg.images && msg.images.length > 0) {
+          return [
+            ...msg.images.map((img) => ({
+              type: "image" as const,
+              source: { type: "base64" as const, media_type: img.mediaType, data: img.base64 },
+            })),
+            { type: "text" as const, text: msg.content },
+          ];
+        }
+        return msg.content;
+      };
+
       const apiMessages = [
         ...messages.map((msg) => ({
           role: msg.role,
-          content: msg.content,
+          content: buildContent(msg),
           ...(msg.toolCalls && msg.toolCalls.length > 0
             ? {
                 tool_calls: msg.toolCalls.map((tc) => ({
@@ -117,7 +138,18 @@ export function useAIChat(conversationId?: string, initialMessages?: ChatMessage
               }
             : {}),
         })),
-        { role: "user" as const, content: content.trim() },
+        {
+          role: "user" as const,
+          content: images && images.length > 0
+            ? [
+                ...images.map((img) => ({
+                  type: "image" as const,
+                  source: { type: "base64" as const, media_type: img.mediaType, data: img.base64 },
+                })),
+                { type: "text" as const, text: content.trim() },
+              ]
+            : content.trim(),
+        },
       ];
 
       const assistantMessageId = generateId();

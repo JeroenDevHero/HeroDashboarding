@@ -32,7 +32,7 @@ interface KlipConfig {
 interface Klip {
   id: string;
   name: string;
-  type: 'bar_chart' | 'line_chart' | 'pie_chart' | 'area_chart' | 'number' | 'table';
+  type: string;
   description?: string;
   config: KlipConfig;
   query_id?: string | null;

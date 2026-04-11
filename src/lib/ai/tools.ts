@@ -43,14 +43,7 @@ export interface CreateKlipInput {
   name: string;
   type: KlipType;
   description?: string;
-  config?: {
-    x_field?: string;
-    y_field?: string;
-    group_by?: string;
-    colors?: string[];
-    show_legend?: boolean;
-    show_grid?: boolean;
-  };
+  config?: Record<string, unknown>;
   query_id?: string;
   ai_prompt?: string;
 }

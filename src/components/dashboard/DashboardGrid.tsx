@@ -109,7 +109,7 @@ export default function DashboardGrid({
                 </span>
               </div>
             )}
-            <KlipCard klip={item.klip as Parameters<typeof KlipCard>[0]["klip"]} />
+            <KlipCard klip={item.klip} />
           </div>
         ))}
       </ResponsiveGridLayout>

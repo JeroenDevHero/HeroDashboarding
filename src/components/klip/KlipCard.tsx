@@ -5,24 +5,16 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import KlipChart from "./KlipChart";
+import type { KlipChartConfig } from "./KlipChart";
 
-interface KlipConfig {
-  x_field?: string;
-  y_field?: string;
-  colors?: string[];
-  show_legend?: boolean;
-  show_grid?: boolean;
-  prefix?: string;
-  suffix?: string;
-  columns?: { key: string; label: string }[];
+interface KlipConfig extends KlipChartConfig {
   sample_data?: Record<string, unknown>[];
-  [key: string]: unknown;
 }
 
 interface Klip {
   id: string;
   name: string;
-  type: "bar_chart" | "line_chart" | "pie_chart" | "area_chart" | "number" | "table";
+  type: string;
   description?: string;
   config: KlipConfig;
 }
@@ -36,24 +28,35 @@ interface KlipCardProps {
 const typeBadgeVariant: Record<string, "info" | "success" | "warning" | "error"> = {
   bar_chart: "info",
   line_chart: "info",
-  pie_chart: "success",
   area_chart: "info",
-  number: "warning",
+  pie_chart: "success",
+  scatter_chart: "info",
+  radar_chart: "info",
+  combo_chart: "info",
+  sparkline: "info",
+  funnel: "info",
+  treemap: "info",
+  waterfall_chart: "info",
+  heatmap: "info",
+  slope_chart: "info",
+  small_multiples: "info",
+  box_plot: "info",
+  sankey: "info",
   table: "success",
-};
-
-/** Map DB enum type to chart render type */
-const chartTypeMap: Record<string, "bar" | "line" | "pie" | "area" | "number" | "table"> = {
-  bar_chart: "bar",
-  line_chart: "line",
-  pie_chart: "pie",
-  area_chart: "area",
-  number: "number",
-  table: "table",
+  status_board: "success",
+  kpi_tile: "warning",
+  number_comparison: "warning",
+  metric_card: "warning",
+  gauge: "warning",
+  progress_bar: "warning",
+  bullet_chart: "warning",
+  timeline: "success",
+  text_widget: "success",
+  iframe: "success",
+  map: "info",
 };
 
 export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
-  const renderType = chartTypeMap[klip.type] ?? "bar";
   const sampleData = klip.config?.sample_data;
   const hasData = sampleData && sampleData.length > 0;
 
@@ -80,18 +83,9 @@ export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
         {hasData ? (
           <div style={{ width: "100%", height: 200 }}>
             <KlipChart
-              type={renderType}
+              type={klip.type}
               data={sampleData}
-              config={{
-                x_field: klip.config.x_field,
-                y_field: klip.config.y_field,
-                colors: klip.config.colors,
-                show_legend: klip.config.show_legend ?? false,
-                show_grid: klip.config.show_grid ?? true,
-                prefix: klip.config.prefix,
-                suffix: klip.config.suffix,
-                columns: klip.config.columns,
-              }}
+              config={klip.config}
             />
           </div>
         ) : (

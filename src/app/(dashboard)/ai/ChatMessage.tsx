@@ -14,6 +14,18 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex justify-end">
         <div className="max-w-[80%] rounded-2xl rounded-br-md bg-hero-blue px-4 py-2.5">
+          {message.images && message.images.length > 0 && (
+            <div className="mb-2 flex gap-2 flex-wrap">
+              {message.images.map((img, i) => (
+                <img
+                  key={i}
+                  src={`data:${img.mediaType};base64,${img.base64}`}
+                  alt={`Bijlage ${i + 1}`}
+                  className="max-h-48 max-w-full rounded-lg"
+                />
+              ))}
+            </div>
+          )}
           <p className="whitespace-pre-wrap text-sm text-white">{message.content}</p>
         </div>
       </div>

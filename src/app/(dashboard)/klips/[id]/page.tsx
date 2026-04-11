@@ -11,14 +11,34 @@ const typeBadgeVariant: Record<
   string,
   "info" | "success" | "warning" | "error"
 > = {
-  kpi_tile: "warning",
   bar_chart: "info",
   line_chart: "info",
   area_chart: "info",
   pie_chart: "success",
-  gauge: "warning",
-  table: "success",
+  scatter_chart: "info",
+  radar_chart: "info",
+  combo_chart: "info",
   sparkline: "info",
+  funnel: "info",
+  treemap: "info",
+  waterfall_chart: "info",
+  heatmap: "info",
+  slope_chart: "info",
+  small_multiples: "info",
+  box_plot: "info",
+  sankey: "info",
+  table: "success",
+  status_board: "success",
+  kpi_tile: "warning",
+  number_comparison: "warning",
+  metric_card: "warning",
+  gauge: "warning",
+  progress_bar: "warning",
+  bullet_chart: "warning",
+  timeline: "success",
+  text_widget: "success",
+  iframe: "success",
+  map: "info",
 };
 
 export default async function KlipDetailPage({
@@ -72,23 +92,14 @@ export default async function KlipDetailPage({
       <Card className="mb-6">
         <div className="min-h-[320px]">
           {(() => {
-            const sampleData = (klip.config as Record<string, unknown>)?.sample_data as Record<string, unknown>[] | undefined;
+            const cfg = klip.config as Record<string, unknown>;
+            const sampleData = cfg?.sample_data as Record<string, unknown>[] | undefined;
             if (sampleData && sampleData.length > 0) {
-              const cfg = klip.config as Record<string, unknown>;
               return (
                 <KlipChartWrapper
                   type={klip.type}
                   data={sampleData}
-                  config={{
-                    x_field: cfg.x_field as string | undefined,
-                    y_field: cfg.y_field as string | undefined,
-                    colors: cfg.colors as string[] | undefined,
-                    show_legend: (cfg.show_legend as boolean) ?? false,
-                    show_grid: (cfg.show_grid as boolean) ?? true,
-                    prefix: cfg.prefix as string | undefined,
-                    suffix: cfg.suffix as string | undefined,
-                    columns: cfg.columns as { key: string; label: string }[] | undefined,
-                  }}
+                  config={cfg as import("@/components/klip/KlipChart").KlipChartConfig}
                 />
               );
             }

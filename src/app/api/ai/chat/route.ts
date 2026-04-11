@@ -23,15 +23,25 @@ export const dynamic = "force-dynamic";
 async function saveConversationProgress(
   conversationId: string,
   userId: string,
-  messages: { role: string; content: string; tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[] }[],
+  messages: { role: string; content: string | unknown[]; tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[] }[],
   status: "in_progress" | "completed" | "error",
   createdKlipIds: string[] = []
 ) {
   const supabase = createAdminClient();
 
+  // Strip images from content before saving — base64 data is too large for DB
+  const extractTextContent = (content: string | unknown[]): string => {
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+      const textBlock = content.find((b: unknown) => (b as { type: string }).type === "text") as { text?: string } | undefined;
+      return textBlock?.text || "";
+    }
+    return "";
+  };
+
   const messagesJsonb: Record<string, unknown>[] = messages.map((m) => ({
     role: m.role,
-    content: m.content,
+    content: extractTextContent(m.content),
     ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
     timestamp: new Date().toISOString(),
   }));
@@ -81,6 +91,41 @@ Opmaak:
 - Stel geschikte grafiektypen voor op basis van de data
 - Maak het werk altijd helemaal af
 
+Type-selectie:
+- Een enkel groot getal (KPI) -> kpi_tile (met comparison_value voor trend)
+- Getal met mini-grafiekje -> metric_card (met comparison_value + trend via sample_data)
+- Twee getallen vergelijken -> number_comparison
+- Categorien vergelijken -> bar_chart (gebruik horizontal: true als labels lang zijn)
+- Trend over tijd -> line_chart of area_chart
+- Meerdere metrieken over tijd -> line_chart/area_chart met y_fields array
+- Delen van geheel -> pie_chart (max 6-8 items, gebruik donut: true voor modern uiterlijk)
+- Staaf + lijn combinatie -> combo_chart (bar_field + line_field, dual_axis als schalen verschillen)
+- Score op meerdere dimensies -> radar_chart
+- Spreiding/correlatie -> scatter_chart
+- Proces met afname per stap -> funnel
+- Hiërarchie/proportie -> treemap
+- Opeenvolgende veranderingen -> waterfall_chart
+- Waarde op schaal (0-100) -> gauge, progress_bar, of bullet_chart
+- Status overzicht (groen/geel/rood) -> status_board
+- Chronologische events -> timeline
+- Voor/na vergelijking -> slope_chart
+- Data matrix met intensiteit -> heatmap
+- Zelfde grafiek per groep -> small_multiples
+
+Multi-series:
+- Als de gebruiker meerdere metrieken in één grafiek wil, gebruik y_fields (array) in plaats van y_field
+- Zet show_legend: true bij multi-series charts
+- Gebruik stacked: true als de waarden optelbaar zijn (bijv. omzet per categorie)
+
+Sample data structuur per type:
+- Charts (bar/line/area/pie/scatter/radar): [{x_field: "label", y_field: 123, ...}]
+- KPI/gauge/progress: gebruik config.value, config.comparison_value, config.target
+- Table: [{col1: "val", col2: 123, ...}]
+- Status board: [{name: "Service", status: "ok"}, ...]
+- Timeline: [{date: "2024-01", title: "Event", description: "..."}]
+- Funnel: [{stage: "Stap 1", value: 1000}, {stage: "Stap 2", value: 600}]
+- Heatmap: [{x_field: "Row", col1: 10, col2: 20, ...}]
+
 Kennisbank:
 - Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge`;
 
@@ -116,9 +161,47 @@ const TOOLS: Anthropic.Messages.Tool[] = [
             "combo_chart",
             "text_widget",
             "iframe",
+            "radar_chart",
+            "treemap",
+            "waterfall_chart",
+            "sankey",
+            "bullet_chart",
+            "box_plot",
+            "slope_chart",
+            "small_multiples",
+            "metric_card",
+            "status_board",
+            "timeline",
           ],
           description:
-            "Het type visualisatie: bar_chart (staafdiagram), line_chart (lijndiagram), pie_chart (taartdiagram), area_chart (vlakdiagram), kpi_tile (KPI-tegel), table (tabel), gauge, sparkline, scatter_chart, funnel, map, number_comparison, progress_bar, heatmap, combo_chart, text_widget, iframe",
+            "Het type visualisatie. Keuze-gids: " +
+            "kpi_tile = groot getal met trend (omzet, KPI). " +
+            "metric_card = getal + sparkline + vergelijking. " +
+            "number_comparison = twee getallen naast elkaar met verschil%. " +
+            "bar_chart = staafdiagram (ondersteunt y_fields voor multi-series, stacked, horizontal). " +
+            "line_chart = lijndiagram (ondersteunt y_fields voor meerdere lijnen). " +
+            "area_chart = vlakdiagram (ondersteunt y_fields, stacked). " +
+            "pie_chart = taartdiagram (ondersteunt donut modus). " +
+            "combo_chart = staaf + lijn gecombineerd (bar_field + line_field, dual_axis). " +
+            "scatter_chart = spreidingsdiagram (x numeriek, y numeriek). " +
+            "radar_chart = radardiagram (meerdere dimensies). " +
+            "gauge = halfcirkel meter met naald (0-100 of custom min/max). " +
+            "progress_bar = voortgangsbalk met kleurzones. " +
+            "bullet_chart = horizontale bar met target en ranges. " +
+            "sparkline = kleine trendlijn zonder assen. " +
+            "funnel = trechterdiagram (stages met afname). " +
+            "treemap = vlakken proportioneel aan waarde. " +
+            "waterfall_chart = watervaldiagram (toenames/afnames). " +
+            "heatmap = kleurintensiteit matrix. " +
+            "table = datatabel. " +
+            "status_board = grid van status-indicatoren (groen/geel/rood). " +
+            "timeline = verticale tijdlijn met events. " +
+            "slope_chart = voor-na vergelijking met lijnen. " +
+            "box_plot = box-and-whisker (min/q1/median/q3/max). " +
+            "small_multiples = grid van mini-charts per groep. " +
+            "sankey = stroomdiagram (bron -> doel met waarde). " +
+            "text_widget = tekst/markdown. " +
+            "iframe = externe URL embedden.",
         },
         description: {
           type: "string",
@@ -126,19 +209,24 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         },
         config: {
           type: "object",
-          description: "Configuratie voor de visualisatie (opgeslagen als JSONB)",
+          description: "Configuratie voor de visualisatie (opgeslagen als JSONB). Geef ALTIJD de juiste config-velden mee per type.",
           properties: {
             x_field: {
               type: "string",
-              description: "Het veld voor de X-as",
+              description: "Het veld voor de X-as / categorie / label",
             },
             y_field: {
               type: "string",
-              description: "Het veld voor de Y-as",
+              description: "Het veld voor de Y-as (enkele metriek)",
+            },
+            y_fields: {
+              type: "array",
+              items: { type: "string" },
+              description: "Meerdere Y-velden voor multi-series charts (bar, line, area). Gebruik dit als je meerdere metrieken wilt tonen.",
             },
             group_by: {
               type: "string",
-              description: "Veld om op te groeperen",
+              description: "Veld om op te groeperen (voor small_multiples)",
             },
             colors: {
               type: "array",
@@ -147,11 +235,135 @@ const TOOLS: Anthropic.Messages.Tool[] = [
             },
             show_legend: {
               type: "boolean",
-              description: "Toon legenda",
+              description: "Toon legenda (aanbevolen voor multi-series)",
             },
             show_grid: {
               type: "boolean",
               description: "Toon rasterlijnen",
+            },
+            stacked: {
+              type: "boolean",
+              description: "Gestapelde weergave voor bar/area charts",
+            },
+            horizontal: {
+              type: "boolean",
+              description: "Horizontale weergave voor bar charts",
+            },
+            donut: {
+              type: "boolean",
+              description: "Donut modus voor pie charts (ring i.p.v. taart)",
+            },
+            value: {
+              type: "number",
+              description: "Enkele waarde voor kpi_tile/gauge/progress_bar/metric_card/bullet_chart",
+            },
+            min: {
+              type: "number",
+              description: "Minimum waarde voor gauge/progress_bar",
+            },
+            max: {
+              type: "number",
+              description: "Maximum waarde voor gauge/progress_bar/bullet_chart",
+            },
+            target: {
+              type: "number",
+              description: "Doelwaarde voor gauge/progress_bar/bullet_chart",
+            },
+            thresholds: {
+              type: "array",
+              items: { type: "number" },
+              description: "Drempelwaarden voor kleurzones (gauge/progress_bar/bullet_chart)",
+            },
+            comparison_value: {
+              type: "number",
+              description: "Vergelijkingswaarde voor kpi_tile/metric_card/number_comparison (bijv. vorige periode)",
+            },
+            comparison_label: {
+              type: "string",
+              description: "Label voor de vergelijking (bijv. 'vorige maand')",
+            },
+            prefix: {
+              type: "string",
+              description: "Prefix voor getalweergave (bijv. 'EUR ' of '$')",
+            },
+            suffix: {
+              type: "string",
+              description: "Suffix voor getalweergave (bijv. '%' of ' kg')",
+            },
+            bar_field: {
+              type: "string",
+              description: "Veld voor staafgedeelte in combo_chart",
+            },
+            line_field: {
+              type: "string",
+              description: "Veld voor lijngedeelte in combo_chart",
+            },
+            dual_axis: {
+              type: "boolean",
+              description: "Twee Y-assen voor combo_chart (links: bar, rechts: lijn)",
+            },
+            smooth: {
+              type: "boolean",
+              description: "Vloeiende lijnen voor line_chart",
+            },
+            dimension_field: {
+              type: "string",
+              description: "Dimensie-veld voor radar_chart",
+            },
+            stage_field: {
+              type: "string",
+              description: "Stage-veld voor funnel / bron-veld voor sankey",
+            },
+            size_field: {
+              type: "string",
+              description: "Grootte-veld voor scatter_chart bubbels",
+            },
+            date_field: {
+              type: "string",
+              description: "Datumveld voor timeline",
+            },
+            title_field: {
+              type: "string",
+              description: "Titelveld voor timeline",
+            },
+            description_field: {
+              type: "string",
+              description: "Beschrijvingsveld voor timeline",
+            },
+            status_field: {
+              type: "string",
+              description: "Statusveld voor status_board (waarden: ok/warning/error/green/yellow/red)",
+            },
+            before_field: {
+              type: "string",
+              description: "Voor-veld voor slope_chart",
+            },
+            after_field: {
+              type: "string",
+              description: "Na-veld voor slope_chart",
+            },
+            chart_type: {
+              type: "string",
+              description: "Sub-chart type voor small_multiples (bijv. 'line_chart', 'bar_chart')",
+            },
+            content: {
+              type: "string",
+              description: "Tekst/markdown content voor text_widget",
+            },
+            url: {
+              type: "string",
+              description: "URL voor iframe widget",
+            },
+            columns: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  key: { type: "string" },
+                  label: { type: "string" },
+                },
+              },
+              description: "Kolom-definities voor table type",
             },
           },
         },
@@ -336,7 +548,7 @@ export async function POST(request: Request) {
     const { messages, conversationId: incomingConversationId } = body as {
       messages: {
         role: string;
-        content: string;
+        content: string | { type: string; source?: { type: string; media_type: string; data: string }; text?: string }[];
         tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[];
       }[];
       conversationId?: string;
@@ -450,9 +662,10 @@ ${catalogSummaries}
 ${intelligenceSummaries}`;
 
     // Cast messages to the expected Anthropic format
+    // Content can be a string or a multi-content array (for images)
     const anthropicMessages = messages.map((msg) => ({
       role: msg.role as "user" | "assistant",
-      content: msg.content,
+      content: msg.content as string | Anthropic.Messages.ContentBlockParam[],
     }));
 
     // Start streaming response from Claude - now with full context pre-loaded
@@ -619,9 +832,14 @@ ${intelligenceSummaries}`;
                     // Auto-learn from klip creation
                     if (result && !isError && lastPreviewInput) {
                       const lastUserMsg = messages.filter((m) => m.role === "user").pop();
+                      const lastUserText = typeof lastUserMsg?.content === "string"
+                        ? lastUserMsg.content
+                        : Array.isArray(lastUserMsg?.content)
+                          ? (lastUserMsg.content.find((b: { type: string; text?: string }) => b.type === "text") as { text?: string } | undefined)?.text || ""
+                          : "";
                       learnFromKlipCreation({
                         dataSourceId: lastPreviewInput.data_source_id || "",
-                        naturalLanguage: lastUserMsg?.content || "",
+                        naturalLanguage: lastUserText,
                         sqlQuery: lastPreviewInput.query || "",
                         klipType: (toolBlock.input as Record<string, unknown>).type as string,
                         config: ((toolBlock.input as Record<string, unknown>).config as Record<string, unknown>) || {},

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAIChat } from "@/lib/hooks/useAIChat";
-import type { ChatMessage as ChatMessageType, ToolCall, ConnectionStatus } from "@/lib/hooks/useAIChat";
+import type { ChatMessage as ChatMessageType, ToolCall, ConnectionStatus, ImageAttachment } from "@/lib/hooks/useAIChat";
 import Button from "@/components/ui/Button";
 import ChatMessage from "./ChatMessage";
 
@@ -37,9 +37,11 @@ export default function AIChat({
     retryLastMessage,
   } = useAIChat(conversationId || undefined, initialMessages);
   const [inputValue, setInputValue] = useState("");
+  const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
   const [showInProgressBanner, setShowInProgressBanner] = useState(wasInProgress);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const prevConversationIdRef = useRef<string | null>(conversationId);
 
   // When conversationId or initialMessages change, reset messages
@@ -70,6 +72,64 @@ export default function AIChat({
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
   }, [inputValue]);
 
+  const processFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const imageFiles = fileArray.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+
+    // Max 4 images at a time
+    const toProcess = imageFiles.slice(0, 4 - pendingImages.length);
+
+    for (const file of toProcess) {
+      if (file.size > 5 * 1024 * 1024) {
+        // Skip files > 5MB silently (could add toast later)
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        // dataUrl = "data:image/png;base64,..."
+        const [meta, base64] = dataUrl.split(",");
+        const mediaType = meta.match(/data:(image\/\w+);/)?.[1] as ImageAttachment["mediaType"] | undefined;
+        if (base64 && mediaType) {
+          setPendingImages((prev) => {
+            if (prev.length >= 4) return prev;
+            return [...prev, { base64, mediaType }];
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [pendingImages.length]);
+
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+      // Reset so the same file can be selected again
+      e.target.value = "";
+    }
+  }, [processFiles]);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const imageFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        const file = items[i].getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      processFiles(imageFiles);
+    }
+  }, [processFiles]);
+
+  const removeImage = useCallback((index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || isLoading) return;
     const content = inputValue.trim();
@@ -78,8 +138,9 @@ export default function AIChat({
     // so it can update the title
     const isFirstMessage = messages.length === 0;
 
-    sendMessage(content);
+    sendMessage(content, pendingImages.length > 0 ? pendingImages : undefined);
     setInputValue("");
+    setPendingImages([]);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -88,7 +149,7 @@ export default function AIChat({
     if (isFirstMessage && conversationId && onFirstMessage) {
       onFirstMessage(conversationId, content);
     }
-  }, [inputValue, isLoading, sendMessage, messages.length, conversationId, onFirstMessage]);
+  }, [inputValue, isLoading, sendMessage, pendingImages, messages.length, conversationId, onFirstMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -256,12 +317,49 @@ export default function AIChat({
 
       {/* Input bar */}
       <div className="border-t border-hero-grey-light p-4">
+        {/* Thumbnail preview strip */}
+        {pendingImages.length > 0 && (
+          <div className="mb-2 flex gap-2 flex-wrap">
+            {pendingImages.map((img, i) => (
+              <div key={i} className="group relative h-16 w-16 rounded-lg overflow-hidden border border-hero-grey-light">
+                <img
+                  src={`data:${img.mediaType};base64,${img.base64}`}
+                  alt={`Upload ${i + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <span className="material-symbols-rounded text-[14px]">close</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            multiple
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || !conversationId || pendingImages.length >= 4}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[var(--radius-input)] border border-hero-grey-light text-hero-grey-regular transition-colors hover:border-hero-blue-bold hover:text-hero-blue disabled:opacity-50"
+            title="Afbeelding toevoegen"
+          >
+            <span className="material-symbols-rounded text-[20px]">attach_file</span>
+          </button>
           <textarea
             ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={conversationId ? "Beschrijf je klip..." : "Selecteer eerst een gesprek..."}
             rows={1}
             disabled={isLoading || !conversationId}
