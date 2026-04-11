@@ -2,6 +2,7 @@
 
 import type { ChatMessage as ChatMessageType } from "@/lib/hooks/useAIChat";
 import ToolCallCard from "./ToolCallCard";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -38,9 +39,10 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       <div className="max-w-[80%]">
         <div className="rounded-2xl rounded-bl-md bg-white px-4 py-2.5 shadow-[0_1px_3px_rgba(7,56,137,0.08)]">
           {message.content ? (
-            <div className="whitespace-pre-wrap text-sm text-hero-grey-black leading-relaxed">
-              {message.content}
-            </div>
+            <MarkdownRenderer
+              content={message.content}
+              className="text-hero-grey-black"
+            />
           ) : (
             !message.toolCalls?.length && (
               <div className="flex items-center gap-2 text-sm text-hero-grey-regular">

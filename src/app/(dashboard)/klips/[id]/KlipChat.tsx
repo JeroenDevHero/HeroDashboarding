@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Button from "@/components/ui/Button";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 interface ChatMessage {
   id: string;
@@ -389,15 +390,16 @@ export default function KlipChat({ klipId, klipName }: KlipChatProps) {
                       }`}
                     >
                       {msg.content ? (
-                        <p
-                          className={`whitespace-pre-wrap text-sm leading-relaxed ${
-                            msg.role === "user"
-                              ? "text-white"
-                              : "text-hero-grey-black"
-                          }`}
-                        >
-                          {msg.content}
-                        </p>
+                        msg.role === "user" ? (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+                            {msg.content}
+                          </p>
+                        ) : (
+                          <MarkdownRenderer
+                            content={msg.content}
+                            className="text-hero-grey-black"
+                          />
+                        )
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium" />
