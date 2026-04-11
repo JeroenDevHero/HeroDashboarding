@@ -199,7 +199,6 @@ export async function executePreviewData(
   _userId: string
 ) {
   const supabase = createAdminClient();
-  const limit = input.limit ?? 100;
 
   // If a data_source_id is provided, execute against that external data source
   if (input.data_source_id) {
@@ -227,13 +226,14 @@ export async function executePreviewData(
     switch (typeSlug) {
       case "databricks": {
         const config = dataSource.connection_config as DatabricksConfig;
-        const rows = await executeDatabricksQuery(config, input.query, limit);
+        // No artificial limit — the SQL query itself controls the result size.
+        // Databricks has a safety cap of 10000 rows to prevent runaway queries.
+        const rows = await executeDatabricksQuery(config, input.query);
         const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
         return {
           rows,
           columns,
           row_count: rows.length,
-          limited_to: limit,
         };
       }
 
@@ -248,8 +248,10 @@ export async function executePreviewData(
   }
 
   // Fallback: no data_source_id provided, try Supabase RPC for local queries
+  // Keep a safety limit here since local queries may lack aggregation
   const safeQuery = input.query.replace(/;\s*$/, "");
-  const limitedQuery = `SELECT * FROM (${safeQuery}) AS _preview LIMIT ${limit}`;
+  const fallbackLimit = input.limit ?? 10000;
+  const limitedQuery = `SELECT * FROM (${safeQuery}) AS _preview LIMIT ${fallbackLimit}`;
 
   const { data, error } = await supabase.rpc("execute_readonly_query", {
     query_text: limitedQuery,
@@ -262,7 +264,6 @@ export async function executePreviewData(
   return {
     rows: data,
     row_count: Array.isArray(data) ? data.length : 0,
-    limited_to: limit,
   };
 }
 

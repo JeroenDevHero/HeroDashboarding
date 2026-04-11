@@ -143,8 +143,7 @@ Sample data structuur per type:
 - Heatmap: [{x_field: "Row", col1: 10, col2: 20, ...}]
 
 Data-query regels:
-- Gebruik ALTIJD een limit van minstens 500 bij preview_data als de data in een klip komt — je wilt ALLE rijen, niet een subset
-- Voor geaggregeerde queries (GROUP BY vestiging, maand, etc.) is het CRUCIAAL dat je ALLE groepen ophaalt, niet slechts de eerste 10
+- preview_data haalt ALLE rijen op die je SQL query retourneert — er is GEEN kunstmatige rij-limiet. Schrijf correcte SQL met de juiste WHERE, GROUP BY en aggregatie.
 - Gebruik voor datumfilters ALTIJD expliciete datums gebaseerd op de huidige datum, bijv:
   - "deze maand" = WHERE datum >= DATE_TRUNC('month', CURRENT_DATE()) AND datum < DATE_ADD(DATE_TRUNC('month', CURRENT_DATE()), 1)
   - "vorige maand" = WHERE datum >= ADD_MONTHS(DATE_TRUNC('month', CURRENT_DATE()), -1) AND datum < DATE_TRUNC('month', CURRENT_DATE())
@@ -466,7 +465,7 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         },
         limit: {
           type: "number",
-          description: "Maximum aantal rijen om op te halen (standaard 100). Gebruik een hogere waarde (bijv. 500) als je ALLE geaggregeerde data nodig hebt voor een klip (bijv. alle vestigingen, alle maanden). Gebruik een lagere waarde (10-20) alleen voor een snelle preview.",
+          description: "Optioneel: maximum aantal rijen. Standaard GEEN limiet voor Databricks — de SQL query bepaalt zelf hoeveel rijen er terugkomen. Geef dit alleen mee als je expliciet wilt beperken.",
         },
       },
       required: ["query"],
