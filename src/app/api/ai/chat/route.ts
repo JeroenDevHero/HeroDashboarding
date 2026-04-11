@@ -614,13 +614,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, conversationId: incomingConversationId } = body as {
+    const { messages, conversationId: incomingConversationId, klipId } = body as {
       messages: {
         role: string;
         content: string | { type: string; source?: { type: string; media_type: string; data: string }; text?: string }[];
         tool_calls?: { id: string; name: string; input: Record<string, unknown>; result?: unknown }[];
       }[];
       conversationId?: string;
+      klipId?: string;
     };
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -639,8 +640,9 @@ export async function POST(request: Request) {
         .from("ai_conversations")
         .insert({
           user_id: user.id,
-          title: "Nieuw gesprek",
+          title: klipId ? "Klip chat" : "Nieuw gesprek",
           context_type: "klip_builder",
+          context_id: klipId || null,
           messages: [],
         })
         .select("id")
@@ -740,6 +742,33 @@ export async function POST(request: Request) {
       }
     }
 
+    // If a specific klipId was provided, fetch that klip's details so the AI knows what to modify
+    let focusKlipText = "";
+    if (klipId) {
+      try {
+        const klipAdmin = createAdminClient();
+        const { data: focusKlip } = await klipAdmin
+          .from("klips")
+          .select("id, name, type, description, config, query_id, ai_prompt")
+          .eq("id", klipId)
+          .single();
+
+        if (focusKlip) {
+          const cfg = focusKlip.config as Record<string, unknown>;
+          focusKlipText = `\n--- HUIDIGE KLIP (focus van dit gesprek) ---
+Je bespreekt wijzigingen voor deze specifieke klip. Gebruik update_klip met klip_id "${focusKlip.id}" om wijzigingen door te voeren.
+- Naam: ${focusKlip.name}
+- Type: ${focusKlip.type}
+- Beschrijving: ${focusKlip.description || "Geen"}
+- Query ID: ${focusKlip.query_id || "Niet gekoppeld"}
+- AI prompt: ${focusKlip.ai_prompt || "Geen"}
+- Config: ${JSON.stringify(cfg, null, 2)}`;
+        }
+      } catch (err) {
+        console.error("[AI Chat] Failed to fetch focus klip:", err);
+      }
+    }
+
     // Build enriched system prompt with all context
     const datasourcesText = Array.isArray(datasourcesList)
       ? datasourcesList.map((d: Record<string, unknown>) =>
@@ -748,6 +777,7 @@ export async function POST(request: Request) {
       : "Geen databronnen gevonden.";
 
     const enrichedSystemPrompt = `${BASE_SYSTEM_PROMPT}
+${focusKlipText}
 ${conversationKlipsText}
 
 --- KENNISBANK ---

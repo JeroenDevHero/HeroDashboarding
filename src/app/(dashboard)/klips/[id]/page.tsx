@@ -7,6 +7,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import KlipDetailActions from "./KlipDetailActions";
 import KlipChartWrapper from "./KlipChartWrapper";
 import KlipVersionHistory from "./KlipVersionHistory";
+import KlipChat from "./KlipChat";
 
 const typeBadgeVariant: Record<
   string,
@@ -182,6 +183,9 @@ export default async function KlipDetailPage({
           </dl>
         </Card>
       </div>
+
+      {/* Chat window for discussing changes */}
+      <KlipChat klipId={klip.id} klipName={klip.name} />
     </div>
   );
 }
