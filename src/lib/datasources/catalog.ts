@@ -164,6 +164,64 @@ export async function analyzeDatabricksSource(
 }
 
 /**
+ * Ensure the data catalog is populated for a data source.
+ * If the catalog is empty, auto-triggers Databricks schema discovery.
+ * Returns true if catalog has entries after the check (existing or newly discovered).
+ */
+export async function ensureCatalogPopulated(
+  dataSourceId: string
+): Promise<boolean> {
+  const supabase = createAdminClient();
+
+  // Quick check — does catalog already have entries?
+  const { count } = await supabase
+    .from("data_catalog")
+    .select("id", { count: "exact", head: true })
+    .eq("data_source_id", dataSourceId);
+
+  if (count && count > 0) return true;
+
+  console.log(
+    `[catalog] Auto-discovering schema for data source ${dataSourceId}...`
+  );
+
+  // Fetch data source with its type
+  const { data: dataSource } = await supabase
+    .from("data_sources")
+    .select("*, data_source_type:data_source_types (*)")
+    .eq("id", dataSourceId)
+    .single();
+
+  if (!dataSource) {
+    console.error(`[catalog] Data source ${dataSourceId} not found`);
+    return false;
+  }
+
+  const typeSlug = dataSource.data_source_type?.slug;
+  if (typeSlug !== "databricks") {
+    console.log(
+      `[catalog] Auto-discover not supported for type: ${typeSlug}`
+    );
+    return false;
+  }
+
+  try {
+    const config = dataSource.connection_config as DatabricksConfig;
+    await analyzeDatabricksSource(dataSourceId, config);
+    console.log(
+      `[catalog] Auto-discovery complete for data source ${dataSourceId}`
+    );
+    return true;
+  } catch (err) {
+    console.error(
+      `[catalog] Auto-discovery failed for ${dataSourceId}:`,
+      err instanceof Error ? err.message : err
+    );
+    return false;
+  }
+}
+
+/**
  * Returns the full catalog for a data source, ordered by table and column.
  */
 export async function getCatalogForSource(

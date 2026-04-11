@@ -12,6 +12,7 @@ import {
   executeGetVisualKnowledge,
 } from "@/lib/ai/tools";
 import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
+import { ensureCatalogPopulated } from "@/lib/datasources/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -626,6 +627,17 @@ export async function POST(request: Request) {
     const dsArray = Array.isArray(datasourcesList) ? datasourcesList : [];
     const dsIds = dsArray.map((d: Record<string, unknown>) => d.id as string);
 
+    // Auto-discover catalog for datasources that have no catalog yet
+    if (dsIds.length > 0) {
+      await Promise.all(
+        dsIds.map((id) =>
+          ensureCatalogPopulated(id).catch((err) =>
+            console.error(`[AI Chat] Auto-catalog failed for ${id}:`, err)
+          )
+        )
+      );
+    }
+
     // Fetch catalog + intelligence for all datasources in parallel
     const [catalogSummaries, intelligenceSummaries] = await Promise.all([
       dsIds.length > 0
@@ -864,13 +876,17 @@ ${intelligenceSummaries}`;
                   case "list_datasources":
                     result = await executeListDatasources(user.id);
                     break;
-                  case "get_data_catalog":
-                    result = await executeGetDataCatalog(
-                      (
-                        toolBlock.input as { data_source_id: string }
-                      ).data_source_id
+                  case "get_data_catalog": {
+                    const catDsId = (
+                      toolBlock.input as { data_source_id: string }
+                    ).data_source_id;
+                    // Auto-discover if catalog is empty
+                    await ensureCatalogPopulated(catDsId).catch((err) =>
+                      console.error("[AI Chat] Auto-catalog in tool failed:", err)
                     );
+                    result = await executeGetDataCatalog(catDsId);
                     break;
+                  }
                   case "get_data_intelligence":
                     result = await executeGetDataIntelligence(
                       (
