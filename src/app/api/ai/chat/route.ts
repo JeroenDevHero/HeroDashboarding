@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   executeCreateKlip,
+  executeUpdateKlip,
   executePreviewData,
   executeListDatasources,
   executeGetDataCatalog,
@@ -115,8 +116,22 @@ Type-selectie:
 
 Multi-series:
 - Als de gebruiker meerdere metrieken in één grafiek wil, gebruik y_fields (array) in plaats van y_field
-- Zet show_legend: true bij multi-series charts
+- Zet ALTIJD show_legend: true bij multi-series charts (y_fields met 2+ velden)
+- Zet ALTIJD show_legend: true bij pie_chart
 - Gebruik stacked: true als de waarden optelbaar zijn (bijv. omzet per categorie)
+
+Wijzigen van bestaande klips:
+- Als een klip eerder in DIT gesprek is aangemaakt, gebruik dan update_klip (met het klip_id) om te wijzigen
+- Maak NOOIT een nieuwe klip aan als de gebruiker een bestaande wil aanpassen
+- De klip_id staat in het resultaat van eerdere create_klip of update_klip tool-calls
+- Bij update_klip worden alleen de meegegeven velden overschreven, de rest blijft behouden
+- Er wordt automatisch een versie-snapshot bewaard zodat de gebruiker terug kan
+
+Config best practices - geef ALTIJD mee:
+- x_field: het label/categorie veld (VERPLICHT voor charts)
+- y_field of y_fields: het/de waarde-veld(en) (VERPLICHT voor charts)
+- show_legend: true voor multi-series en pie charts
+- colors: passende kleuren (gebruik Hero kleuren: #073889, #F46015, #10B981, #8B5CF6, #EC4899, #F59E0B)
 
 Sample data structuur per type:
 - Charts (bar/line/area/pie/scatter/radar): [{x_field: "label", y_field: 123, ...}]
@@ -383,6 +398,49 @@ const TOOLS: Anthropic.Messages.Tool[] = [
     },
   },
   {
+    name: "update_klip",
+    description:
+      "Wijzig een BESTAANDE klip. Gebruik dit wanneer de gebruiker een klip wil aanpassen die al eerder in dit gesprek is aangemaakt. Dit update de klip in-place in plaats van een nieuwe aan te maken. Er wordt automatisch een versie-snapshot bewaard zodat de gebruiker terug kan.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        klip_id: {
+          type: "string",
+          description: "UUID van de bestaande klip die gewijzigd moet worden",
+        },
+        name: {
+          type: "string",
+          description: "Nieuwe naam (optioneel, alleen als de naam wijzigt)",
+        },
+        type: {
+          type: "string",
+          enum: [
+            "kpi_tile", "bar_chart", "line_chart", "area_chart", "pie_chart",
+            "gauge", "table", "sparkline", "scatter_chart", "funnel", "map",
+            "number_comparison", "progress_bar", "heatmap", "combo_chart",
+            "text_widget", "iframe", "radar_chart", "treemap", "waterfall_chart",
+            "sankey", "bullet_chart", "box_plot", "slope_chart", "small_multiples",
+            "metric_card", "status_board", "timeline",
+          ],
+          description: "Nieuw type (optioneel, alleen als het type wijzigt)",
+        },
+        description: {
+          type: "string",
+          description: "Nieuwe beschrijving (optioneel)",
+        },
+        config: {
+          type: "object",
+          description: "Configuratie-velden die gewijzigd moeten worden. Wordt gemerged met bestaande config.",
+        },
+        query_id: {
+          type: "string",
+          description: "Nieuwe query_id (optioneel)",
+        },
+      },
+      required: ["klip_id"],
+    },
+  },
+  {
     name: "preview_data",
     description:
       "Bekijk een voorbeeld van data uit een query. Gebruik dit om data te verkennen voordat je een klip aanmaakt.",
@@ -523,6 +581,8 @@ function summarizeToolResult(toolName: string, result: unknown): string {
       return `${r.row_count || "?"} rijen opgehaald`;
     case "create_klip":
       return `klip "${r.name || "?"}" aangemaakt`;
+    case "update_klip":
+      return `klip "${r.name || "?"}" bijgewerkt`;
     case "save_knowledge":
       return `kennis "${r.title || "?"}" opgeslagen`;
     default:
@@ -650,6 +710,28 @@ export async function POST(request: Request) {
 
     console.log(`[AI Chat] Context pre-loaded in ${Date.now() - preloadStart}ms`);
 
+    // Look up existing klips in this conversation so AI can use update_klip
+    let conversationKlipsText = "";
+    if (conversationId) {
+      try {
+        const convKlipAdmin = createAdminClient();
+        const { data: existingKlips } = await convKlipAdmin
+          .from("klips")
+          .select("id, name, type")
+          .eq("ai_conversation_id", conversationId)
+          .order("created_at", { ascending: true });
+
+        if (existingKlips && existingKlips.length > 0) {
+          conversationKlipsText = `\n--- KLIPS IN DIT GESPREK (gebruik update_klip om te wijzigen) ---\n` +
+            existingKlips.map((k: Record<string, unknown>) =>
+              `- "${k.name}" (id: ${k.id}, type: ${k.type})`
+            ).join("\n");
+        }
+      } catch (err) {
+        console.error("[AI Chat] Failed to fetch conversation klips:", err);
+      }
+    }
+
     // Build enriched system prompt with all context
     const datasourcesText = Array.isArray(datasourcesList)
       ? datasourcesList.map((d: Record<string, unknown>) =>
@@ -658,6 +740,7 @@ export async function POST(request: Request) {
       : "Geen databronnen gevonden.";
 
     const enrichedSystemPrompt = `${BASE_SYSTEM_PROMPT}
+${conversationKlipsText}
 
 --- KENNISBANK ---
 ${knowledgeContext}
@@ -858,6 +941,24 @@ ${intelligenceSummaries}`;
                       }).catch((err) =>
                         console.error("[intelligence] Learn failed:", err)
                       );
+                    }
+                    break;
+                  case "update_klip":
+                    result = await executeUpdateKlip(
+                      toolBlock.input as Parameters<typeof executeUpdateKlip>[0],
+                      user.id,
+                      lastPreviewResult
+                    );
+                    // Track updated klip ID
+                    if (
+                      result &&
+                      typeof result === "object" &&
+                      "id" in (result as Record<string, unknown>)
+                    ) {
+                      const updatedId = (result as Record<string, unknown>).id as string;
+                      if (!createdKlipIds.includes(updatedId)) {
+                        createdKlipIds.push(updatedId);
+                      }
                     }
                     break;
                   case "preview_data":

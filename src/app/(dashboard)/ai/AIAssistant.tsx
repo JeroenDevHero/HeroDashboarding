@@ -317,7 +317,7 @@ function findLastKlipToolCall(messages: ChatMessage[]): ToolCall | null {
     if (msg.toolCalls) {
       for (let j = msg.toolCalls.length - 1; j >= 0; j--) {
         const tc = msg.toolCalls[j];
-        if (tc.name === "create_klip" || tc.name === "preview_data") {
+        if (tc.name === "create_klip" || tc.name === "update_klip" || tc.name === "preview_data") {
           return tc;
         }
       }
@@ -335,30 +335,37 @@ function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
   const input = toolCall.input;
   const resultData = toolCall.result as Record<string, unknown> | undefined;
 
-  if (toolCall.name === "create_klip") {
-    // The result is the created klip object from Supabase
+  if (toolCall.name === "create_klip" || toolCall.name === "update_klip") {
+    // The result is the created/updated klip object from Supabase
     const config = (resultData?.config || input.config || {}) as Record<string, unknown>;
     const sampleData = (config.sample_data as Record<string, unknown>[]) || [];
     const chartType = (resultData?.type as string) || (input.type as string) || "bar";
     const title = (resultData?.name as string) || (input.name as string) || "Klip preview";
+    const isUpdate = toolCall.name === "update_klip";
+
+    // Pass full config to KlipChart — don't cherry-pick fields
+    const fullConfig: Record<string, unknown> = {
+      ...config,
+      // Ensure show_grid has a sensible default
+      show_grid: (config.show_grid as boolean) ?? true,
+    };
+    // Remove sample_data from config passed to chart (it's passed as data prop)
+    delete fullConfig.sample_data;
 
     return (
       <div className="flex flex-1 flex-col p-5">
         <h3 className="mb-4 text-sm font-semibold text-hero-grey-black">
           {title}
+          {isUpdate && (
+            <span className="ml-2 text-xs font-normal text-hero-grey-regular">(bijgewerkt)</span>
+          )}
         </h3>
         <div style={{ width: "100%", height: 300 }}>
           {sampleData.length > 0 ? (
             <KlipChart
               type={chartType as "bar" | "line" | "pie" | "area" | "number" | "table"}
               data={sampleData}
-              config={{
-                x_field: (config.x_field as string) || (input.x_field as string),
-                y_field: (config.y_field as string) || (input.y_field as string),
-                colors: config.colors as string[] | undefined,
-                show_legend: (config.show_legend as boolean) ?? false,
-                show_grid: (config.show_grid as boolean) ?? true,
-              }}
+              config={fullConfig as import("@/components/klip/KlipChart").KlipChartConfig}
             />
           ) : !resultData ? (
             <div className="flex h-full items-center justify-center">
@@ -373,7 +380,7 @@ function PreviewPanel({ toolCall }: { toolCall: ToolCall }) {
                   check_circle
                 </span>
                 <p className="mt-2 text-sm text-hero-grey-regular">
-                  Klip succesvol aangemaakt!
+                  Klip succesvol {isUpdate ? "bijgewerkt" : "aangemaakt"}!
                 </p>
               </div>
             </div>

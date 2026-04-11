@@ -116,3 +116,117 @@ export async function deleteKlip(id: string) {
 
   revalidatePath('/klips');
 }
+
+export async function duplicateKlip(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  // Fetch the original klip
+  const { data: original, error: fetchError } = await supabase
+    .from('klips')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !original) throw new Error('Klip niet gevonden');
+
+  // Create a copy with "(kopie)" suffix
+  const { data: duplicate, error: insertError } = await supabase
+    .from('klips')
+    .insert({
+      name: `${original.name} (kopie)`,
+      type: original.type,
+      description: original.description,
+      config: original.config,
+      query_id: original.query_id,
+      ai_prompt: original.ai_prompt,
+      ai_generated: original.ai_generated,
+      created_by: user.id,
+    })
+    .select()
+    .single();
+
+  if (insertError) throw new Error(insertError.message);
+
+  revalidatePath('/klips');
+  return duplicate;
+}
+
+export async function getKlipVersions(klipId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const { data, error } = await supabase
+    .from('klip_versions')
+    .select('*')
+    .eq('klip_id', klipId)
+    .order('version_number', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function restoreKlipVersion(klipId: string, versionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  // Get the version to restore
+  const { data: version, error: versionError } = await supabase
+    .from('klip_versions')
+    .select('*')
+    .eq('id', versionId)
+    .eq('klip_id', klipId)
+    .single();
+
+  if (versionError || !version) throw new Error('Versie niet gevonden');
+
+  const versionData = version.version_data as Record<string, unknown>;
+
+  // Save current state as a new version before restoring
+  const { data: currentKlip } = await supabase
+    .from('klips')
+    .select('*')
+    .eq('id', klipId)
+    .single();
+
+  if (currentKlip) {
+    await supabase.from('klip_versions').insert({
+      klip_id: klipId,
+      version_data: {
+        name: currentKlip.name,
+        type: currentKlip.type,
+        description: currentKlip.description,
+        config: currentKlip.config,
+        query_id: currentKlip.query_id,
+      },
+      created_by: user.id,
+    });
+  }
+
+  // Restore the klip to the selected version
+  const { error: updateError } = await supabase
+    .from('klips')
+    .update({
+      name: versionData.name,
+      type: versionData.type,
+      description: versionData.description || null,
+      config: versionData.config || {},
+      query_id: versionData.query_id || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', klipId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  revalidatePath('/klips');
+  revalidatePath(`/klips/${klipId}`);
+}

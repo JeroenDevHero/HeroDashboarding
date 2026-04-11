@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import KlipDetailActions from "./KlipDetailActions";
 import KlipChartWrapper from "./KlipChartWrapper";
+import KlipVersionHistory from "./KlipVersionHistory";
 
 const typeBadgeVariant: Record<
   string,
@@ -85,7 +86,10 @@ export default async function KlipDetailPage({
             <Badge variant="warning">AI gegenereerd</Badge>
           )}
         </div>
-        <KlipDetailActions klipId={klip.id} />
+        <div className="flex items-center gap-2">
+          <KlipVersionHistory klipId={klip.id} />
+          <KlipDetailActions klipId={klip.id} />
+        </div>
       </div>
 
       {/* Chart visualisation -- renders sample_data from config when available */}

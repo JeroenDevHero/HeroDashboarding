@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { deleteKlip } from "@/lib/actions/klip";
+import { deleteKlip, duplicateKlip } from "@/lib/actions/klip";
 
 interface KlipDetailActionsProps {
   klipId: string;
@@ -14,6 +14,7 @@ export default function KlipDetailActions({ klipId }: KlipDetailActionsProps) {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
   async function handleDelete() {
     setDeleting(true);
@@ -25,9 +26,27 @@ export default function KlipDetailActions({ klipId }: KlipDetailActionsProps) {
     }
   }
 
+  async function handleDuplicate() {
+    setDuplicating(true);
+    try {
+      const duplicate = await duplicateKlip(klipId);
+      router.push(`/klips/${duplicate.id}`);
+    } catch {
+      setDuplicating(false);
+    }
+  }
+
   return (
     <>
       <div className="flex items-center gap-2">
+        <Button
+          variant="secondary"
+          icon="content_copy"
+          onClick={handleDuplicate}
+          loading={duplicating}
+        >
+          Dupliceren
+        </Button>
         <Button variant="danger" icon="delete" onClick={() => setShowDeleteModal(true)}>
           Verwijderen
         </Button>

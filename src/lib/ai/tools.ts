@@ -71,6 +71,13 @@ export async function executeCreateKlip(
     config.sample_data = (previewData as Record<string, unknown>).rows;
   }
 
+  // Auto-enable legend for multi-series charts
+  if (config.y_fields && Array.isArray(config.y_fields) && (config.y_fields as string[]).length > 1) {
+    if (config.show_legend === undefined) {
+      config.show_legend = true;
+    }
+  }
+
   const insertData: Record<string, unknown> = {
     name: input.name,
     type: input.type,
@@ -99,6 +106,89 @@ export async function executeCreateKlip(
 
   if (error) {
     throw new Error(`Klip aanmaken mislukt: ${error.message}`);
+  }
+
+  return klip;
+}
+
+export interface UpdateKlipInput {
+  klip_id: string;
+  name?: string;
+  type?: KlipType;
+  description?: string;
+  config?: Record<string, unknown>;
+  query_id?: string;
+}
+
+export async function executeUpdateKlip(
+  input: UpdateKlipInput,
+  userId: string,
+  previewData?: unknown
+) {
+  const supabase = createAdminClient();
+
+  // First fetch the existing klip to merge config
+  const { data: existing, error: fetchError } = await supabase
+    .from("klips")
+    .select("*")
+    .eq("id", input.klip_id)
+    .single();
+
+  if (fetchError || !existing) {
+    throw new Error(`Klip niet gevonden: ${fetchError?.message || "onbekend"}`);
+  }
+
+  // Save a version snapshot before updating
+  await supabase.from("klip_versions").insert({
+    klip_id: existing.id,
+    version_data: {
+      name: existing.name,
+      type: existing.type,
+      description: existing.description,
+      config: existing.config,
+      query_id: existing.query_id,
+    },
+    created_by: userId,
+  });
+
+  // Merge new config with existing config
+  const existingConfig = (existing.config as Record<string, unknown>) || {};
+  const newConfig: Record<string, unknown> = {
+    ...existingConfig,
+    ...(input.config || {}),
+  };
+
+  // Update sample_data from preview if available
+  if (previewData && typeof previewData === 'object' && 'rows' in (previewData as Record<string, unknown>)) {
+    newConfig.sample_data = (previewData as Record<string, unknown>).rows;
+  }
+
+  // Auto-enable legend for multi-series charts
+  if (newConfig.y_fields && Array.isArray(newConfig.y_fields) && (newConfig.y_fields as string[]).length > 1) {
+    if (newConfig.show_legend === undefined) {
+      newConfig.show_legend = true;
+    }
+  }
+
+  const updateData: Record<string, unknown> = {
+    config: newConfig,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.name) updateData.name = input.name;
+  if (input.type) updateData.type = input.type;
+  if (input.description !== undefined) updateData.description = input.description || null;
+  if (input.query_id) updateData.query_id = input.query_id;
+
+  const { data: klip, error } = await supabase
+    .from("klips")
+    .update(updateData)
+    .eq("id", input.klip_id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Klip bijwerken mislukt: ${error.message}`);
   }
 
   return klip;

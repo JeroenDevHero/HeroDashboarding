@@ -244,12 +244,14 @@ export default function KlipChart({ type: rawType, data, config }: KlipChartProp
     x_field = "name",
     prefix = "",
     suffix = "",
-    show_legend = false,
     columns,
   } = config;
   const palette = getColors(config.colors);
   const fixedPalette = getFixedColors(config.colors);
   const yFields = getYFields(config);
+
+  // Auto-enable legend for multi-series charts, respect explicit setting
+  const show_legend = config.show_legend ?? (yFields.length > 1);
 
   // ========== KPI TILE ==========
   if (type === "kpi_tile") {
