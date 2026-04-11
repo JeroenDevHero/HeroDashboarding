@@ -71,7 +71,7 @@ export async function executeDatabricksQuery(
       initialSchema: config.schema || "default",
     });
 
-    const maxRows = limit ?? 1000;
+    const maxRows = limit ?? 10000;
     const operation = await session.executeStatement(query, { maxRows });
     const rows = (await operation.fetchAll()) as Record<string, unknown>[];
 

@@ -142,6 +142,15 @@ Sample data structuur per type:
 - Funnel: [{stage: "Stap 1", value: 1000}, {stage: "Stap 2", value: 600}]
 - Heatmap: [{x_field: "Row", col1: 10, col2: 20, ...}]
 
+Data-query regels:
+- Gebruik ALTIJD een limit van minstens 500 bij preview_data als de data in een klip komt — je wilt ALLE rijen, niet een subset
+- Voor geaggregeerde queries (GROUP BY vestiging, maand, etc.) is het CRUCIAAL dat je ALLE groepen ophaalt, niet slechts de eerste 10
+- Gebruik voor datumfilters ALTIJD expliciete datums gebaseerd op de huidige datum, bijv:
+  - "deze maand" = WHERE datum >= DATE_TRUNC('month', CURRENT_DATE()) AND datum < DATE_ADD(DATE_TRUNC('month', CURRENT_DATE()), 1)
+  - "vorige maand" = WHERE datum >= ADD_MONTHS(DATE_TRUNC('month', CURRENT_DATE()), -1) AND datum < DATE_TRUNC('month', CURRENT_DATE())
+- Controleer de kolom-types in de catalog: als een datumkolom een STRING is, cast dan correct (bijv. CAST(kolom AS DATE))
+- Tel NOOIT preview-rijen als je het totaal wilt weten — gebruik altijd COUNT/SUM in je SQL
+
 Kennisbank:
 - Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge`;
 
@@ -457,7 +466,7 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         },
         limit: {
           type: "number",
-          description: "Maximum aantal rijen om te tonen (standaard 10)",
+          description: "Maximum aantal rijen om op te halen (standaard 100). Gebruik een hogere waarde (bijv. 500) als je ALLE geaggregeerde data nodig hebt voor een klip (bijv. alle vestigingen, alle maanden). Gebruik een lagere waarde (10-20) alleen voor een snelle preview.",
         },
       },
       required: ["query"],

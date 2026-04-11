@@ -199,7 +199,7 @@ export async function executePreviewData(
   _userId: string
 ) {
   const supabase = createAdminClient();
-  const limit = input.limit ?? 10;
+  const limit = input.limit ?? 100;
 
   // If a data_source_id is provided, execute against that external data source
   if (input.data_source_id) {
