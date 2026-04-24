@@ -3,12 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { enrichCatalogWithAI } from "@/lib/datasources/enrichment";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 minutes for large schemas
+// We intentionally keep the HTTP handler short — the heavy lifting is kicked
+// off fire-and-forget so progress can be polled via /api/datasources/catalog-stats.
+export const maxDuration = 60;
 
 /**
  * Kick off AI-driven semantic enrichment of a data source's catalog.
- * Long-running by design — clients should trigger and poll for completion
- * via the catalog itself (semantic_description_source = 'ai-generated' rows).
+ * Returns immediately; the enrichment runs in the background. Progress can be
+ * observed via GET /api/datasources/catalog-stats (ai_enriched_columns grows
+ * while the job is running).
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -43,14 +46,25 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    const result = await enrichCatalogWithAI(body.data_source_id, {
-      force: body.force === true,
-    });
-    return NextResponse.json({ status: "completed", ...result });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Onbekende fout bij verrijken";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  const dataSourceId = body.data_source_id;
+  const force = body.force === true;
+
+  // Fire-and-forget. Enrichment for hundreds of tables can easily take
+  // 15-30 minutes, which would far exceed any reasonable HTTP timeout.
+  // The UI polls /api/datasources/catalog-stats for live progress.
+  void (async () => {
+    try {
+      const result = await enrichCatalogWithAI(dataSourceId, { force });
+      console.log(
+        `[enrich] Done for ${dataSourceId}: ${result.tablesProcessed} tables, ${result.columnsUpdated} columns`
+      );
+    } catch (err) {
+      console.error(
+        `[enrich] Background enrichment failed for ${dataSourceId}:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  })();
+
+  return NextResponse.json({ status: "started" });
 }

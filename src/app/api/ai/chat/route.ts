@@ -155,6 +155,7 @@ Sample data structuur per type:
 
 Data-query regels:
 - preview_data haalt ALLE rijen op die je SQL query retourneert — er is GEEN kunstmatige rij-limiet. Schrijf correcte SQL met de juiste WHERE, GROUP BY en aggregatie.
+- Elke preview_data aanroep heeft een unieke tool_use id. Wil je meerdere klips maken waar elk zijn EIGEN preview heeft, geef dan bij create_klip / update_klip ALTIJD het veld preview_id mee met de id van de bijbehorende preview_data aanroep, anders krijgen alle klips de data van de laatste preview.
 - Gebruik voor datumfilters ALTIJD expliciete datums gebaseerd op de huidige datum, bijv:
   - "deze maand" = WHERE datum >= DATE_TRUNC('month', CURRENT_DATE()) AND datum < DATE_ADD(DATE_TRUNC('month', CURRENT_DATE()), 1)
   - "vorige maand" = WHERE datum >= ADD_MONTHS(DATE_TRUNC('month', CURRENT_DATE()), -1) AND datum < DATE_TRUNC('month', CURRENT_DATE())
@@ -412,6 +413,11 @@ const TOOLS: Anthropic.Messages.Tool[] = [
           description:
             "UUID van een bestaande data_source_query om aan de klip te koppelen (optioneel)",
         },
+        preview_id: {
+          type: "string",
+          description:
+            "De tool_use id van de preview_data-aanroep waarvan de sample_data gebruikt moet worden. VERPLICHT als er in deze conversatie meerdere preview_data-aanroepen zijn geweest en je meerdere klips maakt met verschillende data. Zonder preview_id wordt automatisch de meest recente preview gebruikt.",
+        },
         ai_prompt: {
           type: "string",
           description:
@@ -459,6 +465,11 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         query_id: {
           type: "string",
           description: "Nieuwe query_id (optioneel)",
+        },
+        preview_id: {
+          type: "string",
+          description:
+            "De tool_use id van de preview_data-aanroep waarvan de nieuwe sample_data gebruikt moet worden (optioneel, alleen zinvol als er recent een preview is gedaan).",
         },
       },
       required: ["klip_id"],
@@ -904,27 +915,36 @@ ${intelligenceSummaries}${
         const createdKlipIds: string[] = [];
         let lastPreviewResult: unknown = null;
         let lastPreviewInput: { query: string; data_source_id?: string } | null = null;
+        // Cache of ALL preview results in this conversation, keyed by the preview_data
+        // tool_use id. This lets create_klip/update_klip reference a specific preview
+        // via preview_id when multiple previews live side-by-side in the same round.
+        const previewResultsById = new Map<
+          string,
+          { result: unknown; input: { query: string; data_source_id?: string } }
+        >();
         const allMessages = [...messages];
 
         // Recover preview data so reworks (user modifying a klip) still have sample_data.
-        // Strategy 1: Check incoming messages for tool_calls with preview_data results
-        for (let mi = messages.length - 1; mi >= 0; mi--) {
-          const msg = messages[mi];
-          if (msg.tool_calls) {
-            for (let ti = msg.tool_calls.length - 1; ti >= 0; ti--) {
-              const tc = msg.tool_calls[ti];
-              if (tc.name === "preview_data" && tc.result) {
-                const r = tc.result as Record<string, unknown>;
-                if (r.rows && Array.isArray(r.rows) && (r.rows as unknown[]).length > 0) {
-                  lastPreviewResult = tc.result;
-                  lastPreviewInput = tc.input as { query: string; data_source_id?: string };
-                  console.log("[AI Chat] Recovered preview data from message tool_calls");
-                  break;
-                }
-              }
+        // Strategy 1: Walk incoming messages to rebuild the full preview cache AND the
+        // "most recent" pointer. We iterate forward so the last-seen preview wins.
+        for (const msg of messages) {
+          if (!msg.tool_calls) continue;
+          for (const tc of msg.tool_calls) {
+            if (tc.name !== "preview_data" || !tc.result) continue;
+            const r = tc.result as Record<string, unknown>;
+            if (!r.rows || !Array.isArray(r.rows) || (r.rows as unknown[]).length === 0) {
+              continue;
             }
-            if (lastPreviewResult) break;
+            const input = tc.input as { query: string; data_source_id?: string };
+            previewResultsById.set(tc.id, { result: tc.result, input });
+            lastPreviewResult = tc.result;
+            lastPreviewInput = input;
           }
+        }
+        if (previewResultsById.size > 0) {
+          console.log(
+            `[AI Chat] Recovered ${previewResultsById.size} preview(s) from message tool_calls`
+          );
         }
 
         // Strategy 2: Fallback to DB - check existing klips in this conversation
@@ -1001,6 +1021,25 @@ ${intelligenceSummaries}${
             // Execute each tool call
             const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
 
+            // Resolve which preview result belongs to a create_klip / update_klip
+            // call. Honours an explicit preview_id when present; otherwise falls back
+            // to the most recent preview. Returns undefined if nothing is available.
+            const resolvePreviewForKlip = (
+              input: Record<string, unknown>
+            ): { result: unknown; input: { query: string; data_source_id?: string } | null } => {
+              const pid = input.preview_id;
+              if (typeof pid === "string" && previewResultsById.has(pid)) {
+                const cached = previewResultsById.get(pid)!;
+                return { result: cached.result, input: cached.input };
+              }
+              if (typeof pid === "string") {
+                console.warn(
+                  `[AI Chat] preview_id "${pid}" not found in cache, falling back to last preview`
+                );
+              }
+              return { result: lastPreviewResult, input: lastPreviewInput };
+            };
+
             for (const toolBlock of toolUseBlocks) {
               let result: unknown;
               let isError = false;
@@ -1008,14 +1047,18 @@ ${intelligenceSummaries}${
               try {
                 console.log(`[AI Chat] Executing tool: ${toolBlock.name}`);
                 switch (toolBlock.name) {
-                  case "create_klip":
+                  case "create_klip": {
+                    const createInput = toolBlock.input as Record<string, unknown>;
+                    const { result: klipPreview, input: klipPreviewInput } =
+                      resolvePreviewForKlip(createInput);
+                    // Strip preview_id before passing to the DB layer
+                    const { preview_id: _pid, ...cleanInput } = createInput;
+                    void _pid;
                     result = await executeCreateKlip(
-                      toolBlock.input as Parameters<
-                        typeof executeCreateKlip
-                      >[0],
+                      cleanInput as unknown as Parameters<typeof executeCreateKlip>[0],
                       user.id,
                       conversationId,
-                      lastPreviewResult
+                      klipPreview
                     );
                     // Track created klip IDs for conversation persistence
                     if (
@@ -1027,8 +1070,9 @@ ${intelligenceSummaries}${
                         (result as Record<string, unknown>).id as string
                       );
                     }
-                    // Auto-learn from klip creation
-                    if (result && !isError && lastPreviewInput) {
+                    // Auto-learn from klip creation — use the preview this klip was
+                    // actually bound to (falls back to most recent preview).
+                    if (result && !isError && klipPreviewInput) {
                       const lastUserMsg = messages.filter((m) => m.role === "user").pop();
                       const lastUserText = typeof lastUserMsg?.content === "string"
                         ? lastUserMsg.content
@@ -1036,9 +1080,9 @@ ${intelligenceSummaries}${
                           ? (lastUserMsg.content.find((b: { type: string; text?: string }) => b.type === "text") as { text?: string } | undefined)?.text || ""
                           : "";
                       learnFromKlipCreation({
-                        dataSourceId: lastPreviewInput.data_source_id || "",
+                        dataSourceId: klipPreviewInput.data_source_id || "",
                         naturalLanguage: lastUserText,
-                        sqlQuery: lastPreviewInput.query || "",
+                        sqlQuery: klipPreviewInput.query || "",
                         klipType: (toolBlock.input as Record<string, unknown>).type as string,
                         config: ((toolBlock.input as Record<string, unknown>).config as Record<string, unknown>) || {},
                       }).catch((err) =>
@@ -1046,11 +1090,16 @@ ${intelligenceSummaries}${
                       );
                     }
                     break;
-                  case "update_klip":
+                  }
+                  case "update_klip": {
+                    const updateInput = toolBlock.input as Record<string, unknown>;
+                    const { result: klipPreview } = resolvePreviewForKlip(updateInput);
+                    const { preview_id: _upid, ...cleanUpdateInput } = updateInput;
+                    void _upid;
                     result = await executeUpdateKlip(
-                      toolBlock.input as Parameters<typeof executeUpdateKlip>[0],
+                      cleanUpdateInput as unknown as Parameters<typeof executeUpdateKlip>[0],
                       user.id,
-                      lastPreviewResult
+                      klipPreview
                     );
                     // Track updated klip ID
                     if (
@@ -1064,6 +1113,7 @@ ${intelligenceSummaries}${
                       }
                     }
                     break;
+                  }
                   case "preview_data":
                     result = await executePreviewData(
                       toolBlock.input as Parameters<
@@ -1073,8 +1123,15 @@ ${intelligenceSummaries}${
                     );
                     // Track preview data and input so create_klip can attach it & learn from it
                     if (result && !isError) {
+                      const previewInput = toolBlock.input as { query: string; data_source_id?: string };
                       lastPreviewResult = result;
-                      lastPreviewInput = toolBlock.input as { query: string; data_source_id?: string };
+                      lastPreviewInput = previewInput;
+                      // Cache by tool_use id so subsequent create_klip/update_klip
+                      // calls can target this specific preview via preview_id.
+                      previewResultsById.set(toolBlock.id, {
+                        result,
+                        input: previewInput,
+                      });
                     }
                     break;
                   case "list_datasources":

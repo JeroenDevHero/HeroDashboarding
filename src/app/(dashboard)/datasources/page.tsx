@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDataSources } from "@/lib/actions/datasource";
+import { getCatalogStats } from "@/lib/datasources/stats";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
@@ -7,6 +8,7 @@ import DatasourceList from "./DatasourceList";
 
 export default async function DataSourcesPage() {
   const datasources = await getDataSources();
+  const stats = await getCatalogStats(datasources.map((d) => d.id));
 
   return (
     <div>
@@ -35,7 +37,7 @@ export default async function DataSourcesPage() {
           />
         </Card>
       ) : (
-        <DatasourceList datasources={datasources} />
+        <DatasourceList datasources={datasources} initialStats={stats} />
       )}
     </div>
   );
