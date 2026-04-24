@@ -34,6 +34,29 @@ import {
 // Config interface — supports all 27 klip types
 // ---------------------------------------------------------------------------
 
+/**
+ * A sub-component of a composite klip. Rendered below the main chart.
+ * Each component has its own type + config (with optional sample_data) so it
+ * can display e.g. a KPI total, a mini table or a text widget alongside the
+ * main visualisation.
+ */
+export interface KlipComponentSpec {
+  /** Klip type of this sub-component (kpi_tile, metric_card, number_comparison, table, text_widget, ...). */
+  type: string;
+  /** Optional title rendered above the sub-component. */
+  title?: string;
+  /** Grid span — "half" = 1/2 width (two per row), "full" = full width. Default "full". */
+  span?: "half" | "full";
+  /** Optional explicit height (in px) for this sub-component. */
+  height?: number;
+  /**
+   * Configuration for the sub-component — same shape as a top-level klip config.
+   * Include `sample_data` here if this component needs its own data (e.g. a
+   * totals row). When omitted, the main klip's sample_data is used as fallback.
+   */
+  config: KlipChartConfig;
+}
+
 export interface KlipChartConfig {
   // Core fields (bar, line, area, pie, scatter)
   x_field?: string;
@@ -45,6 +68,16 @@ export interface KlipChartConfig {
   prefix?: string;
   suffix?: string;
   columns?: { key: string; label: string }[];
+
+  /**
+   * Optional sub-components rendered below the main chart in a responsive
+   * grid (2 cols). Use to show e.g. a totals row (Omzet + Marge KPI tiles)
+   * below the main graph within a single klip.
+   */
+  components?: KlipComponentSpec[];
+
+  /** Optional per-component sample_data (used when this config is a sub-component). */
+  sample_data?: Record<string, unknown>[];
 
   // Multi-series & grouping
   stacked?: boolean;
@@ -240,6 +273,50 @@ function cartesianAxes(xField: string, config: KlipChartConfig, horizontal?: boo
 
 export default function KlipChart({ type: rawType, data, config }: KlipChartProps) {
   const type: string = typeAliases[rawType] ?? rawType;
+
+  // ========== COMPOSITE KLIP (main chart + extra components) ==========
+  // Render this BEFORE destructuring so the main chart recurses into itself
+  // without the components (preventing infinite recursion).
+  if (Array.isArray(config.components) && config.components.length > 0) {
+    const { components, ...mainConfig } = config;
+    const safeMainConfig = mainConfig as KlipChartConfig;
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        {/* Main chart fills the available space */}
+        <div className="min-h-[160px] flex-1">
+          <KlipChart type={rawType} data={data} config={safeMainConfig} />
+        </div>
+        {/* Components row — responsive 2-col grid */}
+        <div className="grid shrink-0 grid-cols-2 gap-3">
+          {components.map((comp, idx) => {
+            const span = comp.span === "half" ? "col-span-1" : "col-span-2";
+            const subData =
+              (comp.config?.sample_data as Record<string, unknown>[] | undefined) ??
+              data;
+            const subConfig = { ...comp.config } as KlipChartConfig;
+            delete subConfig.components;
+            return (
+              <div
+                key={idx}
+                className={`${span} rounded-[var(--radius-card)] border border-hero-grey-light/60 bg-white/60 p-2`}
+                style={{ minHeight: comp.height ?? 80 }}
+              >
+                {comp.title && (
+                  <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-hero-grey-regular">
+                    {comp.title}
+                  </div>
+                )}
+                <div style={{ height: comp.height ?? 80 }}>
+                  <KlipChart type={comp.type} data={subData} config={subConfig} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   const {
     x_field = "name",
     prefix = "",

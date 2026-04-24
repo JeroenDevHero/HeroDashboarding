@@ -131,6 +131,17 @@ Multi-series:
 - Zet ALTIJD show_legend: true bij pie_chart
 - Gebruik stacked: true als de waarden optelbaar zijn (bijv. omzet per categorie)
 
+Meerdere componenten in één klip (config.components):
+- Een klip kan NAAST de hoofdgrafiek extra sub-componenten bevatten die ERONDER in dezelfde klip-kaart verschijnen (bijv. twee KPI-tegels met totalen onder een bar_chart).
+- Zet ze in config.components als array: [{ type, title, span, height, config: {...} }, ...].
+- span: "half" zorgt dat twee componenten naast elkaar passen (ideaal voor "Omzet totaal" + "Marge totaal"). span: "full" is volle breedte.
+- Geef elke sub-component ZELF zijn data mee:
+  * Voor kpi_tile / metric_card: zet config.value (en eventueel comparison_value, prefix, suffix).
+  * Voor tabel/tekst: zet config.sample_data of config.content.
+  * Laat config.sample_data weg als je precies dezelfde data wil hergebruiken als de hoofdgrafiek.
+- Bij update_klip worden de bestaande components VERVANGEN door het array dat je meestuurt. Dus: wil je een component toevoegen aan een bestaande set, stuur dan ALLE bestaande componenten opnieuw mee plus de nieuwe.
+- Typisch gebruik: de gebruiker vraagt "voeg een totaal Omzet en Marge toe onder de grafiek". Bereken dan met preview_data de totalen (SUM) en zet twee kpi_tile componenten met span: "half" en config.value = het totaal.
+
 Wijzigen van bestaande klips:
 - Als een klip eerder in DIT gesprek is aangemaakt, gebruik dan update_klip (met het klip_id) om te wijzigen
 - Maak NOOIT een nieuwe klip aan als de gebruiker een bestaande wil aanpassen
@@ -411,6 +422,43 @@ const TOOLS: Anthropic.Messages.Tool[] = [
                 },
               },
               description: "Kolom-definities voor table type",
+            },
+            components: {
+              type: "array",
+              description:
+                "Optionele sub-componenten die ONDER de hoofdgrafiek getoond worden, binnen dezelfde klip-kaart. Gebruik dit bijvoorbeeld om naast een grafiek twee KPI-tegels met totalen te tonen (bv. 'Omzet totaal' en 'Marge totaal'). Elke sub-component is zelf een klip-type met eigen type + config.",
+              items: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string",
+                    description:
+                      "Klip-type voor deze sub-component (bv. kpi_tile, metric_card, number_comparison, table, text_widget).",
+                  },
+                  title: {
+                    type: "string",
+                    description:
+                      "Optioneel label dat boven de sub-component getoond wordt (bv. 'Omzet totaal').",
+                  },
+                  span: {
+                    type: "string",
+                    enum: ["half", "full"],
+                    description:
+                      "'half' = half brede tegel (twee per rij, ideaal voor twee KPI's naast elkaar), 'full' = volle breedte. Standaard 'full'.",
+                  },
+                  height: {
+                    type: "number",
+                    description:
+                      "Optionele hoogte in pixels (standaard 80 voor KPI, meer voor tabel/tekst).",
+                  },
+                  config: {
+                    type: "object",
+                    description:
+                      "Configuratie voor deze sub-component (zelfde velden als de hoofd-config). Zet ALTIJD sample_data OF een expliciete value mee: bv. voor een kpi_tile met totaal: { value: 123456, prefix: 'EUR ' }. Als je geen sample_data meegeeft, valt hij terug op de sample_data van de hoofdklip.",
+                  },
+                },
+                required: ["type", "config"],
+              },
             },
           },
         },

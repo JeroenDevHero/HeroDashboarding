@@ -59,6 +59,8 @@ const typeBadgeVariant: Record<string, "info" | "success" | "warning" | "error">
 export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
   const sampleData = klip.config?.sample_data;
   const hasData = sampleData && sampleData.length > 0;
+  const hasComponents =
+    Array.isArray(klip.config?.components) && klip.config.components.length > 0;
 
   const headerAction = (
     <div className="flex items-center gap-1">
@@ -79,9 +81,15 @@ export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
       headerAction={headerAction}
       className="h-full flex flex-col"
     >
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         {hasData ? (
-          <div style={{ width: "100%", height: 200 }}>
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: hasComponents ? 260 : 200,
+            }}
+          >
             <KlipChart
               type={klip.type}
               data={sampleData}
