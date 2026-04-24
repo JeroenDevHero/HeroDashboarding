@@ -5,6 +5,7 @@ import {
 } from "@/lib/datasources/databricks";
 import {
   discoverPostgresSchema,
+  fetchPostgresTableStats,
   samplePostgresTable,
   type PostgresConfig,
 } from "@/lib/datasources/postgres";
@@ -224,17 +225,51 @@ export async function analyzePostgresSource(
     tableMap.get(key)!.push(row);
   }
 
+  // Fetch pg_class row-count estimates once. Used to detect RLS-blindness:
+  // if reltuples suggests a table has many rows but SELECT returns 0, the
+  // connecting role is almost certainly being filtered out by a Row Level
+  // Security policy (e.g. policies that only allow the Supabase JWT roles
+  // `authenticated` / `service_role`, which never match a direct Postgres
+  // connection). We warn prominently instead of silently treating the table
+  // as empty.
+  const tableStats = new Map<string, number>();
+  try {
+    const stats = await fetchPostgresTableStats(config, schemas);
+    for (const s of stats) {
+      tableStats.set(`${s.schema_name}.${s.table_name}`, s.estimated_rows);
+    }
+  } catch (err) {
+    console.warn(
+      `[catalog] Could not fetch pg_class stats for RLS-blindness check:`,
+      err instanceof Error ? err.message : err
+    );
+  }
+  const rlsBlindTables: string[] = [];
+  const RLS_BLIND_ESTIMATE_THRESHOLD = 10;
+
   for (const [key, columns] of tableMap) {
     const [schema, tableName] = key.split(".", 2);
 
     let sampleRows: Record<string, unknown>[] = [];
+    let sampleError: string | null = null;
     try {
       sampleRows = await samplePostgresTable(config, schema, tableName, 3);
     } catch (err) {
+      sampleError = err instanceof Error ? err.message : String(err);
       console.warn(
         `[catalog] Failed to sample ${schema}.${tableName}:`,
-        err instanceof Error ? err.message : err
+        sampleError
       );
+    }
+
+    const estimate = tableStats.get(key);
+    if (
+      sampleError === null &&
+      sampleRows.length === 0 &&
+      typeof estimate === "number" &&
+      estimate > RLS_BLIND_ESTIMATE_THRESHOLD
+    ) {
+      rlsBlindTables.push(`${key} (~${estimate} rows)`);
     }
 
     const catalogRows = columns.map((col) => {
@@ -294,6 +329,28 @@ export async function analyzePostgresSource(
   console.log(
     `[catalog] Postgres discovery complete: ${tableMap.size} tables, ${rows.length} columns for source ${dataSourceId}`
   );
+
+  if (rlsBlindTables.length > 0) {
+    const preview = rlsBlindTables.slice(0, 10).join(", ");
+    const suffix =
+      rlsBlindTables.length > 10
+        ? ` (+${rlsBlindTables.length - 10} meer)`
+        : "";
+    const message =
+      `[catalog] RLS-blindness gedetecteerd: ${rlsBlindTables.length} tabel(len) lijken niet-leeg ` +
+      `volgens pg_class, maar SELECT gaf 0 rijen terug. Waarschijnlijk blokkeren Row Level Security ` +
+      `policies de read-only rol. Fix: grant BYPASSRLS aan de rol, of voeg een policy toe die deze rol ` +
+      `toestaat. Voorbeelden: ${preview}${suffix}`;
+    console.warn(message);
+
+    await supabase
+      .from("data_sources")
+      .update({
+        last_refresh_status: "warning",
+        last_refresh_error: `RLS blokkeert ${rlsBlindTables.length} tabellen (bv. ${preview}${suffix}). Voer op de bron uit: ALTER ROLE <rol> BYPASSRLS;`,
+      })
+      .eq("id", dataSourceId);
+  }
 
   // Rebuild table-level embeddings so semantic retrieval reflects the new
   // catalog. Skipped silently when OPENAI_API_KEY is absent.

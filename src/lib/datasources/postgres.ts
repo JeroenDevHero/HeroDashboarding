@@ -232,6 +232,53 @@ export async function samplePostgresTable(
 }
 
 /**
+ * Postgres keeps an approximate row count per relation in pg_class.reltuples,
+ * populated by ANALYZE / autovacuum. It's a cheap proxy for "is this table
+ * actually populated" without doing a COUNT(*) on every table.
+ *
+ * A value of -1 means "never analyzed" — treat it as unknown.
+ */
+export interface PostgresTableStat {
+  schema_name: string;
+  table_name: string;
+  estimated_rows: number;
+}
+
+export async function fetchPostgresTableStats(
+  config: PostgresConfig,
+  schemas: string[] = ["public"]
+): Promise<PostgresTableStat[]> {
+  const query = `
+    SELECT n.nspname AS schema_name,
+           c.relname AS table_name,
+           c.reltuples::bigint AS estimated_rows
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relkind IN ('r','p','f')
+      AND n.nspname = ANY($1::text[]);
+  `;
+  const client = new Client(buildClientOptions(config));
+  try {
+    await client.connect();
+    const result = await client.query(query, [schemas]);
+    await client.end();
+    return result.rows.map((r) => ({
+      schema_name: r.schema_name as string,
+      table_name: r.table_name as string,
+      estimated_rows: Number(r.estimated_rows),
+    }));
+  } catch (error) {
+    try {
+      await client.end();
+    } catch {
+      // ignore
+    }
+    const msg = error instanceof Error ? error.message : "Onbekende fout";
+    throw new Error(`pg_class stats lezen mislukt: ${msg}`);
+  }
+}
+
+/**
  * Safely quote a Postgres identifier. Rejects anything that doesn't look like
  * a normal identifier to be safe against SQL injection via schema / table name.
  */
