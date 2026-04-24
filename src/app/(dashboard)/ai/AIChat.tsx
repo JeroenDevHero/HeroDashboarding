@@ -15,7 +15,7 @@ interface AIChatProps {
   suggestedQuestions?: string[];
   onConversationCreated?: (id: string) => void;
   onFirstMessage?: (conversationId: string, content: string) => void;
-  onToolCallUpdate?: (toolCall: ToolCall) => void;
+  onToolCallUpdate?: (toolCalls: ToolCall[]) => void;
 }
 
 export default function AIChat({
@@ -163,15 +163,17 @@ export default function AIChat({
     [handleSend]
   );
 
-  // Expose last klip tool call for parent to use in preview panel
-  const lastKlipToolCall = useMemo(() => getLastKlipToolCall(messages), [messages]);
+  // Expose the most recent batch of klip tool calls for the parent preview panel.
+  // A "batch" = all klip-related tool calls from the last assistant message
+  // that contains any of them. This makes multi-klip generations visible at once.
+  const lastKlipBatch = useMemo(() => getLastKlipBatch(messages), [messages]);
 
   // Notify parent of tool call changes for preview
   useEffect(() => {
-    if (onToolCallUpdate && lastKlipToolCall) {
-      onToolCallUpdate(lastKlipToolCall);
+    if (onToolCallUpdate && lastKlipBatch.length > 0) {
+      onToolCallUpdate(lastKlipBatch);
     }
-  }, [messages, onToolCallUpdate, lastKlipToolCall]);
+  }, [messages, onToolCallUpdate, lastKlipBatch]);
 
   const showDisconnectBanner = connectionStatus === "disconnected" || connectionStatus === "error";
 
@@ -415,22 +417,30 @@ export default function AIChat({
 }
 
 /* ------------------------------------------------------------------ */
-/* Exported: get last klip tool call from messages (used by parent)    */
+/* Exported: get the most recent batch of klip-related tool calls     */
+/* Finds the last assistant message with any relevant tool call and   */
+/* returns ALL klips from it (so multi-klip generations are visible). */
+/* If no klips exist but preview_data does, returns the last preview. */
 /* ------------------------------------------------------------------ */
 
-export function getLastKlipToolCall(messages: ChatMessageType[]): ToolCall | null {
+export function getLastKlipBatch(messages: ChatMessageType[]): ToolCall[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
-    if (msg.toolCalls) {
-      for (let j = msg.toolCalls.length - 1; j >= 0; j--) {
-        const tc = msg.toolCalls[j];
-        if (tc.name === "create_klip" || tc.name === "preview_data") {
-          return tc;
-        }
-      }
-    }
+    if (!msg.toolCalls || msg.toolCalls.length === 0) continue;
+    const relevant = msg.toolCalls.filter(
+      (tc) =>
+        tc.name === "create_klip" ||
+        tc.name === "update_klip" ||
+        tc.name === "preview_data"
+    );
+    if (relevant.length === 0) continue;
+    const klips = relevant.filter(
+      (tc) => tc.name === "create_klip" || tc.name === "update_klip"
+    );
+    if (klips.length > 0) return klips;
+    return [relevant[relevant.length - 1]];
   }
-  return null;
+  return [];
 }
 
 /* ------------------------------------------------------------------ */
