@@ -39,7 +39,10 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/api/auth")
+    !request.nextUrl.pathname.startsWith("/api/auth") &&
+    // Public display routes handle their own IP-whitelist / login fallback,
+    // so the middleware must not force them straight to /login.
+    !request.nextUrl.pathname.startsWith("/display")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

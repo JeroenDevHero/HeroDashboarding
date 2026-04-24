@@ -19,10 +19,18 @@ async function getBaseUrl(request: Request): Promise<string> {
   return new URL(request.url).origin;
 }
 
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboards";
+  // Only allow relative, same-origin paths — never an absolute URL, to
+  // prevent open-redirect attacks via ?next=https://evil.example.
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboards";
+  return raw;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboards";
+  const next = safeNext(searchParams.get("next"));
   const baseUrl = await getBaseUrl(request);
 
   if (code) {

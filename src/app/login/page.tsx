@@ -1,15 +1,27 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginInner() {
+  const params = useSearchParams();
+  const next = params.get("next") ?? "/dashboards";
+
   async function handleLogin() {
     const supabase = createClient();
+    const callback = new URL(
+      "/api/auth/callback",
+      window.location.origin
+    );
+    // Pass the post-login destination through the OAuth state via URL param.
+    callback.searchParams.set("next", next);
+
     await supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
         scopes: "email profile",
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: callback.toString(),
       },
     });
   }
@@ -34,5 +46,13 @@ export default function LoginPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

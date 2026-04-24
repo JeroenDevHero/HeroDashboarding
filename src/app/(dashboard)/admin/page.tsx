@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile, getAllProfiles } from "@/lib/actions/profile";
+import {
+  getClientIp,
+  listIpWhitelist,
+} from "@/lib/actions/display";
 import { createClient } from "@/lib/supabase/server";
 import Card from "@/components/ui/Card";
 import AdminUserTable from "./AdminUserTable";
+import IpWhitelistTable from "./IpWhitelistTable";
 
 export default async function AdminPage() {
   const profile = await getCurrentProfile();
@@ -12,6 +17,8 @@ export default async function AdminPage() {
   }
 
   const profiles = await getAllProfiles();
+  const ipWhitelist = await listIpWhitelist();
+  const currentIp = await getClientIp();
 
   // Fetch stats
   const supabase = await createClient();
@@ -75,6 +82,16 @@ export default async function AdminPage() {
       <Card title="Gebruikersbeheer" subtitle="Beheer rollen en rechten van gebruikers">
         <AdminUserTable profiles={profiles} currentUserId={profile.id} />
       </Card>
+
+      {/* Display IP whitelist */}
+      <div className="mt-6">
+        <Card
+          title="Scherm-IP-adressen"
+          subtitle="Op deze IP-adressen tonen dashboards zich direct zonder login"
+        >
+          <IpWhitelistTable entries={ipWhitelist} currentIp={currentIp} />
+        </Card>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   deleteDashboard,
 } from '@/lib/actions/dashboard';
 import EditDashboardModal from './EditDashboardModal';
+import ShareDashboardModal from './ShareDashboardModal';
 
 interface KlipConfig {
   x_field?: string;
@@ -62,6 +63,7 @@ interface Dashboard {
   layout_config?: Record<string, unknown> | null;
   theme?: string | null;
   auto_refresh_seconds?: number | null;
+  share_token: string;
   dashboard_klips: DashboardKlip[];
 }
 
@@ -78,6 +80,7 @@ export default function DashboardEditor({
   const [editing, setEditing] = useState(false);
   const [showAddKlip, setShowAddKlip] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [currentLayout, setCurrentLayout] = useState<{ i: string; x: number; y: number; w: number; h: number }[] | null>(null);
@@ -187,6 +190,14 @@ export default function DashboardEditor({
             </>
           ) : (
             <>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="cast"
+                onClick={() => setShowShareModal(true)}
+              >
+                Delen op scherm
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
@@ -332,6 +343,14 @@ export default function DashboardEditor({
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
         dashboard={dashboard}
+      />
+
+      {/* Share (display on screen) modal */}
+      <ShareDashboardModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        dashboardId={dashboard.id}
+        initialToken={dashboard.share_token}
       />
 
       {/* Delete confirmation modal */}
