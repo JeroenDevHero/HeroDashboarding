@@ -3,8 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getCatalogForSource,
   analyzeDatabricksSource,
+  analyzePostgresSource,
 } from "@/lib/datasources/catalog";
 import { type DatabricksConfig } from "@/lib/datasources/databricks";
+import { type PostgresConfig } from "@/lib/datasources/postgres";
 
 export const dynamic = "force-dynamic";
 
@@ -36,18 +38,23 @@ export async function GET(request: Request) {
       );
     }
 
-    // Verify user owns the data source
+    // Soft ownership guard: allow creator, or rows without an owner yet.
     const { data: owned, error: ownedError } = await supabase
       .from("data_sources")
-      .select("id")
+      .select("id, created_by")
       .eq("id", dataSourceId)
-      .eq("created_by", user.id)
       .single();
 
     if (ownedError || !owned) {
       return new Response(
         JSON.stringify({ error: "Databron niet gevonden" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    if (owned.created_by && owned.created_by !== user.id) {
+      return new Response(
+        JSON.stringify({ error: "Geen toegang" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -118,22 +125,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify user owns the data source
-    const { data: owned, error: ownedError } = await supabase
-      .from("data_sources")
-      .select("id")
-      .eq("id", dataSourceId)
-      .eq("created_by", user.id)
-      .single();
-
-    if (ownedError || !owned) {
-      return new Response(
-        JSON.stringify({ error: "Databron niet gevonden" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Fetch full config with admin client
+    // Fetch full config with admin client (also serves as ownership check)
     const admin = createAdminClient();
     const { data: dataSource, error: fetchError } = await admin
       .from("data_sources")
@@ -153,18 +145,29 @@ export async function POST(request: Request) {
       );
     }
 
+    if (dataSource.created_by && dataSource.created_by !== user.id) {
+      return new Response(
+        JSON.stringify({ error: "Geen toegang" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const typeSlug = dataSource.data_source_type?.slug;
 
     if (typeSlug === "databricks") {
       const config = dataSource.connection_config as DatabricksConfig;
-      // Fire-and-forget: don't block the response
       analyzeDatabricksSource(dataSourceId, config).catch((err) =>
+        console.error("Catalog refresh failed:", err)
+      );
+    } else if (typeSlug === "postgresql" || typeSlug === "supabase-bc") {
+      const config = dataSource.connection_config as PostgresConfig;
+      analyzePostgresSource(dataSourceId, config).catch((err) =>
         console.error("Catalog refresh failed:", err)
       );
     } else {
       return new Response(
         JSON.stringify({
-          error: `Catalog analyse niet ondersteund voor type: ${typeSlug}`,
+          error: `Catalog analyse niet ondersteund voor type: ${typeSlug ?? "onbekend"}`,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );

@@ -171,95 +171,110 @@ export async function deleteDataSource(id: string) {
   redirect('/datasources');
 }
 
-export async function testDataSourceConnection(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Niet ingelogd');
+export async function testDataSourceConnection(
+  id: string
+): Promise<{ status: 'success' | 'error'; message: string }> {
+  // Wrap everything in a try/catch so any failure surfaces as a returned
+  // value. Throwing from a Server Action gets sanitised by Next.js in
+  // production ("An error occurred in the Server Components render..."),
+  // which hides the real reason from the user.
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { status: 'error', message: 'Niet ingelogd' };
 
-  // Verify the user owns this data source (RLS-safe query)
-  const { data: owned, error: ownedError } = await supabase
-    .from('data_sources')
-    .select('id')
-    .eq('id', id)
-    .eq('created_by', user.id)
-    .single();
-
-  if (ownedError || !owned) throw new Error('Databron niet gevonden');
-
-  // Fetch full config with admin client (bypasses RLS, includes secrets)
-  const admin = createAdminClient();
-  const { data: dataSource, error: fetchError } = await admin
-    .from('data_sources')
-    .select(
+    // Fetch full config with admin client (bypasses RLS, includes secrets)
+    const admin = createAdminClient();
+    const { data: dataSource, error: fetchError } = await admin
+      .from('data_sources')
+      .select(
+        `
+        *,
+        data_source_type:data_source_types (*)
       `
-      *,
-      data_source_type:data_source_types (*)
-    `
-    )
-    .eq('id', id)
-    .single();
+      )
+      .eq('id', id)
+      .single();
 
-  if (fetchError || !dataSource) throw new Error('Databron niet gevonden');
-
-  // Test the connection based on type slug
-  const typeSlug = dataSource.data_source_type?.slug;
-  let testResult: { success: boolean; message: string };
-
-  switch (typeSlug) {
-    case 'databricks': {
-      const config = dataSource.connection_config as DatabricksConfig;
-      testResult = await testDatabricksConnection(config);
-      break;
+    if (fetchError || !dataSource) {
+      return { status: 'error', message: 'Databron niet gevonden' };
     }
-    case 'postgresql':
-    case 'supabase-bc': {
-      const config = dataSource.connection_config as PostgresConfig;
-      testResult = await testPostgresConnection(config);
-      break;
-    }
-    default: {
-      testResult = {
-        success: false,
-        message: `Niet-ondersteund type: ${typeSlug}`,
+
+    // Soft ownership guard: allow the creator, or any user if the row was
+    // seeded without a created_by (e.g. inserted via migration/admin).
+    if (dataSource.created_by && dataSource.created_by !== user.id) {
+      return {
+        status: 'error',
+        message: 'Je hebt geen toegang tot deze databron.',
       };
     }
-  }
 
-  const newStatus = testResult.success ? 'success' : 'error';
+    const typeSlug = dataSource.data_source_type?.slug;
+    let testResult: { success: boolean; message: string };
 
-  // Update the data source status using admin client
-  const { error: updateError } = await admin
-    .from('data_sources')
-    .update({
-      last_refresh_status: newStatus,
-      last_refresh_at: new Date().toISOString(),
-      last_refresh_error: testResult.success ? null : testResult.message,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
-
-  if (updateError) throw new Error(updateError.message);
-
-  // Fire-and-forget catalog analysis after successful connection test
-  if (testResult.success) {
-    if (typeSlug === 'databricks') {
-      const config = dataSource.connection_config as DatabricksConfig;
-      analyzeDatabricksSource(id, config).catch((err) =>
-        console.error('Catalog analysis failed:', err)
-      );
-    } else if (typeSlug === 'postgresql' || typeSlug === 'supabase-bc') {
-      const config = dataSource.connection_config as PostgresConfig;
-      analyzePostgresSource(id, config).catch((err) =>
-        console.error('Catalog analysis failed:', err)
-      );
+    switch (typeSlug) {
+      case 'databricks': {
+        const config = dataSource.connection_config as DatabricksConfig;
+        testResult = await testDatabricksConnection(config);
+        break;
+      }
+      case 'postgresql':
+      case 'supabase-bc': {
+        const config = dataSource.connection_config as PostgresConfig;
+        testResult = await testPostgresConnection(config);
+        break;
+      }
+      default: {
+        testResult = {
+          success: false,
+          message: `Niet-ondersteund type: ${typeSlug ?? 'onbekend'}`,
+        };
+      }
     }
+
+    const newStatus = testResult.success ? 'success' : 'error';
+
+    const { error: updateError } = await admin
+      .from('data_sources')
+      .update({
+        last_refresh_status: newStatus,
+        last_refresh_at: new Date().toISOString(),
+        last_refresh_error: testResult.success ? null : testResult.message,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return {
+        status: 'error',
+        message: `Status bijwerken mislukt: ${updateError.message}`,
+      };
+    }
+
+    // Fire-and-forget catalog analysis after successful connection test
+    if (testResult.success) {
+      if (typeSlug === 'databricks') {
+        const config = dataSource.connection_config as DatabricksConfig;
+        analyzeDatabricksSource(id, config).catch((err) =>
+          console.error('Catalog analysis failed:', err)
+        );
+      } else if (typeSlug === 'postgresql' || typeSlug === 'supabase-bc') {
+        const config = dataSource.connection_config as PostgresConfig;
+        analyzePostgresSource(id, config).catch((err) =>
+          console.error('Catalog analysis failed:', err)
+        );
+      }
+    }
+
+    revalidatePath('/datasources');
+    return { status: newStatus, message: testResult.message };
+  } catch (err) {
+    console.error('[testDataSourceConnection] unexpected error:', err);
+    const message = err instanceof Error ? err.message : 'Onbekende fout';
+    return { status: 'error', message };
   }
-
-  revalidatePath('/datasources');
-
-  return { status: newStatus, message: testResult.message };
 }
 
 export async function refreshCatalog(dataSourceId: string) {
