@@ -21,6 +21,32 @@ export async function getConversations() {
   return data;
 }
 
+/**
+ * Find the most recently updated conversation for a given klip.
+ * Used by the klip detail page to restore the chat history when the user
+ * re-opens the page. Returns `null` when no previous conversation exists.
+ */
+export async function getLatestKlipConversation(klipId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Niet ingelogd');
+
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .select('id, messages, updated_at')
+    .eq('user_id', user.id)
+    .eq('context_type', 'klip_builder')
+    .eq('context_id', klipId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function getConversation(id: string) {
   const supabase = await createClient();
   const {

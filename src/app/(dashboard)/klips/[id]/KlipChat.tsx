@@ -10,6 +10,13 @@ interface ChatMessage {
   content: string;
 }
 
+/** Shape of a previously persisted message passed from the server component. */
+export interface KlipChatInitialMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
 interface ToolStatus {
   executing: boolean;
   currentTool: string | null;
@@ -57,11 +64,21 @@ function getToolLabel(tool: string | null): string {
 interface KlipChatProps {
   klipId: string;
   klipName: string;
+  /** Conversation ID from a previous session, so new messages append to the same row. */
+  initialConversationId?: string;
+  /** Previously persisted user/assistant messages to rehydrate the chat. */
+  initialMessages?: KlipChatInitialMessage[];
 }
 
-export default function KlipChat({ klipId, klipName }: KlipChatProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function KlipChat({
+  klipId,
+  klipName,
+  initialConversationId,
+  initialMessages = [],
+}: KlipChatProps) {
+  // Open automatically when there is existing history so the user sees their conversation
+  const [isOpen, setIsOpen] = useState(initialMessages.length > 0);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState<ToolStatus>({
@@ -70,7 +87,9 @@ export default function KlipChat({ klipId, klipName }: KlipChatProps) {
   });
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
-  const [conversationId, setConversationId] = useState<string | undefined>();
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    initialConversationId
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

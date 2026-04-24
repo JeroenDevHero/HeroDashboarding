@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getKlip } from "@/lib/actions/klip";
+import { getLatestKlipConversation } from "@/lib/actions/ai";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import KlipDetailActions from "./KlipDetailActions";
 import KlipChartWrapper from "./KlipChartWrapper";
 import KlipVersionHistory from "./KlipVersionHistory";
-import KlipChat from "./KlipChat";
+import KlipChat, { type KlipChatInitialMessage } from "./KlipChat";
 
 const typeBadgeVariant: Record<
   string,
@@ -58,6 +59,30 @@ export default async function KlipDetailPage({
   }
 
   if (!klip) notFound();
+
+  // Load any previous KlipChat conversation so the user can continue where they left off
+  let initialConversationId: string | undefined;
+  let initialChatMessages: KlipChatInitialMessage[] = [];
+  try {
+    const prev = await getLatestKlipConversation(klip.id);
+    if (prev) {
+      initialConversationId = prev.id;
+      const raw = (prev.messages ?? []) as Array<{
+        id?: string;
+        role: string;
+        content?: string;
+      }>;
+      initialChatMessages = raw
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .map((m, idx) => ({
+          id: m.id || `persisted_${prev.id}_${idx}`,
+          role: m.role as "user" | "assistant",
+          content: m.content || "",
+        }));
+    }
+  } catch (err) {
+    console.error("[KlipDetailPage] Failed to load klip chat history:", err);
+  }
 
   return (
     <div>
@@ -185,7 +210,12 @@ export default async function KlipDetailPage({
       </div>
 
       {/* Chat window for discussing changes */}
-      <KlipChat klipId={klip.id} klipName={klip.name} />
+      <KlipChat
+        klipId={klip.id}
+        klipName={klip.name}
+        initialConversationId={initialConversationId}
+        initialMessages={initialChatMessages}
+      />
     </div>
   );
 }
