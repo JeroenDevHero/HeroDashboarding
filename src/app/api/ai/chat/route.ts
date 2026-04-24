@@ -942,7 +942,11 @@ ${intelligenceSummaries}${
 
     // Build SSE stream
     const encoder = new TextEncoder();
-    const MAX_TOOL_ROUNDS = 5;
+    // Ruimte voor exploratief data-onderzoek (schema afspeuren, verschillende
+    // tabellen proberen, previews draaien vóór create_klip). Laatste ronde is
+    // altijd een tools-loze "closing round" zodat de AI afsluit met een
+    // leesbaar bericht in plaats van stil te vallen op de cap.
+    const MAX_TOOL_ROUNDS = 12;
 
     const readable = new ReadableStream({
       async start(controller) {
@@ -1031,6 +1035,36 @@ ${intelligenceSummaries}${
           for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
             console.log(`[AI Chat] Round ${round} starting`);
 
+            // Op ronde 0 gebruiken we de initiële `stream` die al vóór deze loop
+            // is aangemaakt (met tools). Voor elke vervolgronde maken we nu pas
+            // de stream aan, op basis van de bijgewerkte message history. Zo
+            // kan de laatste ronde nooit een "abandoned stream" achterlaten.
+            if (round > 0) {
+              const isClosingRound = round === MAX_TOOL_ROUNDS;
+
+              if (isClosingRound) {
+                // Geef de client een signaal dat we in de samenvattende beurt zitten
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({
+                      type: "notice",
+                      notice: "tool_round_limit_reached",
+                    })}\n\n`
+                  )
+                );
+              }
+
+              currentStream = await anthropic.messages.stream({
+                model: AI_MODEL,
+                max_tokens: 16384,
+                system: isClosingRound
+                  ? `${enrichedSystemPrompt}\n\nBELANGRIJK: Je hebt het maximum aantal tool-aanroepen in deze beurt bereikt. Roep GEEN tools meer aan. Vat in een kort, duidelijk bericht samen wat je hebt gevonden en wat nog open staat, en stel voor dat de gebruiker een vervolgbericht stuurt (bijv. "ga door" of een specifieke vraag) zodat je verder kunt werken.`
+                  : enrichedSystemPrompt,
+                messages: currentMessages,
+                ...(isClosingRound ? {} : { tools: TOOLS }),
+              });
+            }
+
             // Stream events from the current stream to the client
             for await (const event of currentStream) {
               controller.enqueue(
@@ -1059,6 +1093,29 @@ ${intelligenceSummaries}${
                   content: textBlocks.map((b) => b.text).join(""),
                 });
               }
+              break;
+            }
+
+            // Defensive guard: de closing round krijgt géén tools aangeboden,
+            // maar als het model desondanks tool_use blocks produceert, voeren
+            // we ze niet uit — we zouden anders weer verder rondes nodig hebben.
+            // Val dan terug op een vaste afsluitzin zodat de gebruiker altijd
+            // een leesbaar bericht ziet in plaats van een afgekapte stream.
+            if (round === MAX_TOOL_ROUNDS) {
+              console.warn(
+                "[AI Chat] Closing round returned tool_use blocks; ignoring them."
+              );
+              const textBlocks = finalMessage.content.filter(
+                (block): block is Anthropic.Messages.TextBlock =>
+                  block.type === "text"
+              );
+              const text = textBlocks.map((b) => b.text).join("");
+              const fallback =
+                "Ik heb het maximum aantal tool-aanroepen in deze beurt bereikt. Stuur een vervolgbericht (bijv. 'ga door') als je wilt dat ik verder zoek.";
+              allMessages.push({
+                role: "assistant",
+                content: text ? `${text}\n\n${fallback}` : fallback,
+              });
               break;
             }
 
@@ -1324,20 +1381,14 @@ ${intelligenceSummaries}${
               );
             }
 
-            // Continue conversation with tool results
+            // Continue conversation with tool results. De volgende iteratie
+            // maakt zelf de bijbehorende stream aan (boven in de loop), waarbij
+            // de laatste ronde tools uitschakelt voor een schone afsluiting.
             currentMessages = [
               ...currentMessages,
               { role: "assistant" as const, content: finalMessage.content },
               { role: "user" as const, content: toolResults },
             ];
-
-            currentStream = await anthropic.messages.stream({
-              model: AI_MODEL,
-              max_tokens: 16384,
-              system: enrichedSystemPrompt,
-              tools: TOOLS,
-              messages: currentMessages,
-            });
           }
 
           // Final save with "completed" status
