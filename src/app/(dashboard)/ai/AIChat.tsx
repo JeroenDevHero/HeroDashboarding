@@ -12,6 +12,7 @@ interface AIChatProps {
   conversationId: string | null;
   initialMessages: ChatMessageType[];
   wasInProgress?: boolean;
+  suggestedQuestions?: string[];
   onConversationCreated?: (id: string) => void;
   onFirstMessage?: (conversationId: string, content: string) => void;
   onToolCallUpdate?: (toolCall: ToolCall) => void;
@@ -21,6 +22,7 @@ export default function AIChat({
   conversationId,
   initialMessages,
   wasInProgress = false,
+  suggestedQuestions = [],
   onConversationCreated,
   onFirstMessage,
   onToolCallUpdate,
@@ -218,20 +220,53 @@ export default function AIChat({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center">
+            <div className="max-w-lg text-center">
               <span className="material-symbols-rounded text-[40px] text-hero-grey-light">
                 chat
               </span>
               <p className="mt-2 text-sm text-hero-grey-regular">
-                Start een gesprek om een klip te maken.
+                Stel je vraag in gewoon Nederlands. Ik regel de rest.
               </p>
+              {suggestedQuestions.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2 text-[11px] uppercase tracking-wide text-hero-grey-regular">
+                    Veelgestelde vragen
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {suggestedQuestions.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => {
+                          setInputValue(q);
+                          textareaRef.current?.focus();
+                        }}
+                        className="rounded-lg border border-hero-grey-light bg-white px-3 py-2 text-left text-xs text-hero-grey-black transition-colors hover:border-hero-blue-bold hover:bg-hero-blue-hairline/40 cursor-pointer"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
-            ))}
+            {messages.map((msg, idx) => {
+              const isLastAssistant =
+                msg.role === "assistant" &&
+                idx === messages.length - 1 &&
+                !isLoading;
+              return (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  conversationId={activeConversationId || conversationId || undefined}
+                  isFinal={isLastAssistant}
+                />
+              );
+            })}
 
             {/* Context loading indicator */}
             {isLoading && toolStatus?.phase === "loading_context" && (

@@ -8,7 +8,14 @@ import {
   testDatabricksConnection,
   type DatabricksConfig,
 } from '@/lib/datasources/databricks';
-import { analyzeDatabricksSource } from '@/lib/datasources/catalog';
+import {
+  testPostgresConnection,
+  type PostgresConfig,
+} from '@/lib/datasources/postgres';
+import {
+  analyzeDatabricksSource,
+  analyzePostgresSource,
+} from '@/lib/datasources/catalog';
 
 export async function getDataSources() {
   const supabase = await createClient();
@@ -206,6 +213,12 @@ export async function testDataSourceConnection(id: string) {
       testResult = await testDatabricksConnection(config);
       break;
     }
+    case 'postgresql':
+    case 'supabase-bc': {
+      const config = dataSource.connection_config as PostgresConfig;
+      testResult = await testPostgresConnection(config);
+      break;
+    }
     default: {
       testResult = {
         success: false,
@@ -230,11 +243,18 @@ export async function testDataSourceConnection(id: string) {
   if (updateError) throw new Error(updateError.message);
 
   // Fire-and-forget catalog analysis after successful connection test
-  if (testResult.success && typeSlug === 'databricks') {
-    const config = dataSource.connection_config as DatabricksConfig;
-    analyzeDatabricksSource(id, config).catch((err) =>
-      console.error('Catalog analysis failed:', err)
-    );
+  if (testResult.success) {
+    if (typeSlug === 'databricks') {
+      const config = dataSource.connection_config as DatabricksConfig;
+      analyzeDatabricksSource(id, config).catch((err) =>
+        console.error('Catalog analysis failed:', err)
+      );
+    } else if (typeSlug === 'postgresql' || typeSlug === 'supabase-bc') {
+      const config = dataSource.connection_config as PostgresConfig;
+      analyzePostgresSource(id, config).catch((err) =>
+        console.error('Catalog analysis failed:', err)
+      );
+    }
   }
 
   revalidatePath('/datasources');
@@ -279,8 +299,15 @@ export async function refreshCatalog(dataSourceId: string) {
   switch (typeSlug) {
     case 'databricks': {
       const config = dataSource.connection_config as DatabricksConfig;
-      // Fire-and-forget: don't block the response
       analyzeDatabricksSource(dataSourceId, config).catch((err) =>
+        console.error('Catalog refresh failed:', err)
+      );
+      break;
+    }
+    case 'postgresql':
+    case 'supabase-bc': {
+      const config = dataSource.connection_config as PostgresConfig;
+      analyzePostgresSource(dataSourceId, config).catch((err) =>
         console.error('Catalog refresh failed:', err)
       );
       break;

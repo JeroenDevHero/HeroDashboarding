@@ -3,6 +3,11 @@ import {
   executeDatabricksQuery,
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
+import {
+  executePostgresQuery,
+  quoteIdent,
+  type PostgresConfig,
+} from "@/lib/datasources/postgres";
 import { getCatalogForSource } from "@/lib/datasources/catalog";
 
 // ---------------------------------------------------------------------------
@@ -309,6 +314,152 @@ export async function analyzeColumnStats(
 }
 
 // ---------------------------------------------------------------------------
+// Postgres column statistics
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect whether a Postgres data_type is numeric for statistics purposes.
+ */
+function isPostgresNumericType(t: string): boolean {
+  const lt = t.toLowerCase();
+  return (
+    lt.includes("int") ||
+    lt.includes("numeric") ||
+    lt.includes("decimal") ||
+    lt.includes("real") ||
+    lt.includes("double") ||
+    lt.includes("float") ||
+    lt === "money"
+  );
+}
+
+/**
+ * Analyze per-column distribution / range / top-values for a Postgres table.
+ * Mirrors analyzeColumnStats (Databricks) but uses information_schema
+ * quoting and PG-native casts.
+ */
+export async function analyzePostgresColumnStats(
+  dataSourceId: string,
+  config: PostgresConfig,
+  schemaName: string,
+  tableName: string
+): Promise<void> {
+  const supabase = createAdminClient();
+  const catalog = await getCatalogForSource(dataSourceId);
+  const tableColumns = catalog.filter(
+    (c) => c.schema_name === schemaName && c.table_name === tableName
+  );
+  if (tableColumns.length === 0) return;
+
+  const fqn = `${quoteIdent(schemaName)}.${quoteIdent(tableName)}`;
+
+  for (const col of tableColumns) {
+    const colName = col.column_name;
+    const quotedCol = quoteIdent(colName);
+    const isNumeric = isPostgresNumericType(col.column_type);
+
+    try {
+      let statsRow: Record<string, unknown>;
+
+      if (isNumeric) {
+        const rows = await executePostgresQuery(
+          config,
+          `SELECT
+             COUNT(DISTINCT ${quotedCol}) AS distinct_count,
+             COUNT(*) - COUNT(${quotedCol}) AS null_count,
+             COUNT(*) AS total_count,
+             MIN(${quotedCol})::text AS min_value,
+             MAX(${quotedCol})::text AS max_value,
+             AVG(${quotedCol})::text AS avg_value
+           FROM ${fqn}`,
+          1
+        );
+
+        if (rows.length === 0) continue;
+        const r = rows[0];
+
+        statsRow = {
+          data_source_id: dataSourceId,
+          table_name: tableName,
+          column_name: colName,
+          column_type: col.column_type,
+          distinct_count: Number(r.distinct_count) || 0,
+          null_count: Number(r.null_count) || 0,
+          total_count: Number(r.total_count) || 0,
+          min_value: r.min_value != null ? String(r.min_value) : null,
+          max_value: r.max_value != null ? String(r.max_value) : null,
+          avg_value: r.avg_value != null ? String(r.avg_value) : null,
+          top_values: null,
+          analyzed_at: new Date().toISOString(),
+        };
+      } else {
+        const countRows = await executePostgresQuery(
+          config,
+          `SELECT
+             COUNT(DISTINCT ${quotedCol}) AS distinct_count,
+             COUNT(*) - COUNT(${quotedCol}) AS null_count,
+             COUNT(*) AS total_count
+           FROM ${fqn}`,
+          1
+        );
+        if (countRows.length === 0) continue;
+        const cr = countRows[0];
+
+        let topValues: { value: string; count: number }[] = [];
+        try {
+          const topRows = await executePostgresQuery(
+            config,
+            `SELECT ${quotedCol}::text AS val, COUNT(*)::int AS cnt
+             FROM ${fqn}
+             WHERE ${quotedCol} IS NOT NULL
+             GROUP BY ${quotedCol}
+             ORDER BY cnt DESC
+             LIMIT 10`,
+            10
+          );
+          topValues = topRows.map((r) => ({
+            value: String(r.val),
+            count: Number(r.cnt),
+          }));
+        } catch {
+          // top values are best-effort
+        }
+
+        statsRow = {
+          data_source_id: dataSourceId,
+          table_name: tableName,
+          column_name: colName,
+          column_type: col.column_type,
+          distinct_count: Number(cr.distinct_count) || 0,
+          null_count: Number(cr.null_count) || 0,
+          total_count: Number(cr.total_count) || 0,
+          min_value: null,
+          max_value: null,
+          avg_value: null,
+          top_values: topValues.length > 0 ? topValues : null,
+          analyzed_at: new Date().toISOString(),
+        };
+      }
+
+      const { error } = await supabase.from("column_stats").upsert(statsRow, {
+        onConflict: "data_source_id,table_name,column_name",
+      });
+      if (error) {
+        console.error(
+          `[intelligence] Failed to upsert Postgres column_stats for ${tableName}.${colName}:`,
+          error.message
+        );
+      }
+    } catch (err) {
+      console.error(
+        `[intelligence] Error analyzing Postgres column ${tableName}.${colName}:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Get intelligence summary for AI context
 // ---------------------------------------------------------------------------
 
@@ -318,11 +469,17 @@ export async function getDataIntelligence(
   const supabase = createAdminClient();
   const lines: string[] = [];
 
-  // 1. Popular query patterns (top 10 by use_count)
+  // 1. Popular query patterns — filter out patterns that have received more
+  // thumbs-down than thumbs-up (quality_score < 0) so they stop polluting the
+  // AI context after users have flagged them.
   const { data: patterns } = await supabase
     .from("query_patterns")
-    .select("natural_language, sql_query, tables_used, klip_type, use_count")
+    .select(
+      "natural_language, sql_query, tables_used, klip_type, use_count, quality_score"
+    )
     .eq("data_source_id", dataSourceId)
+    .gte("quality_score", 0)
+    .order("quality_score", { ascending: false })
     .order("use_count", { ascending: false })
     .limit(10);
 

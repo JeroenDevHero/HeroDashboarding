@@ -1,15 +1,43 @@
 "use client";
 
+import { useState } from "react";
 import type { ChatMessage as ChatMessageType } from "@/lib/hooks/useAIChat";
 import ToolCallCard from "./ToolCallCard";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import { submitFeedback } from "@/lib/actions/feedback";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  conversationId?: string;
+  isFinal?: boolean;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({
+  message,
+  conversationId,
+  isFinal,
+}: ChatMessageProps) {
   const isUser = message.role === "user";
+  const [feedback, setFeedback] = useState<null | 1 | -1>(null);
+  const [feedbackPending, setFeedbackPending] = useState(false);
+
+  async function sendFeedback(rating: 1 | -1) {
+    if (feedbackPending || !conversationId) return;
+    setFeedbackPending(true);
+    // Optimistic update so the user gets instant feedback
+    setFeedback(rating);
+    try {
+      await submitFeedback({
+        conversation_id: conversationId,
+        rating,
+      });
+    } catch {
+      // Roll back optimistic state on failure
+      setFeedback(null);
+    } finally {
+      setFeedbackPending(false);
+    }
+  }
 
   if (isUser) {
     return (
@@ -27,7 +55,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               ))}
             </div>
           )}
-          <p className="whitespace-pre-wrap text-sm text-white">{message.content}</p>
+          <p className="whitespace-pre-wrap text-sm text-white">
+            {message.content}
+          </p>
         </div>
       </div>
     );
@@ -56,6 +86,45 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         {message.toolCalls?.map((tc) => (
           <ToolCallCard key={tc.id} toolCall={tc} />
         ))}
+
+        {/* Feedback controls — only for final assistant reply with content */}
+        {isFinal && conversationId && message.content && (
+          <div className="mt-1.5 flex items-center gap-1 px-2">
+            <button
+              type="button"
+              disabled={feedbackPending}
+              onClick={() => sendFeedback(1)}
+              className={`rounded p-1 text-hero-grey-regular transition-colors cursor-pointer hover:text-emerald-600 disabled:opacity-50 ${
+                feedback === 1 ? "text-emerald-600" : ""
+              }`}
+              aria-label="Dit antwoord is goed"
+              title="Dit antwoord is goed"
+            >
+              <span className="material-symbols-rounded text-[16px]">
+                {feedback === 1 ? "thumb_up" : "thumb_up"}
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={feedbackPending}
+              onClick={() => sendFeedback(-1)}
+              className={`rounded p-1 text-hero-grey-regular transition-colors cursor-pointer hover:text-red-500 disabled:opacity-50 ${
+                feedback === -1 ? "text-red-500" : ""
+              }`}
+              aria-label="Dit antwoord klopt niet"
+              title="Dit antwoord klopt niet"
+            >
+              <span className="material-symbols-rounded text-[16px]">
+                thumb_down
+              </span>
+            </button>
+            {feedback && (
+              <span className="ml-1 text-[10px] text-hero-grey-regular">
+                Bedankt voor je feedback
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

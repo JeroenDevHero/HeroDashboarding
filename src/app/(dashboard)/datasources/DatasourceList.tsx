@@ -26,6 +26,7 @@ interface DatasourceListProps {
 }
 
 const typeLabels: Record<string, string> = {
+  "supabase-bc": "Business Central (Supabase)",
   postgresql: "PostgreSQL",
   mysql: "MySQL",
   rest_api: "REST API",
@@ -52,6 +53,8 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
   const [testResult, setTestResult] = useState<Record<string, { status: string; message: string }>>({});
   const [catalogRefreshingId, setCatalogRefreshingId] = useState<string | null>(null);
   const [catalogResult, setCatalogResult] = useState<Record<string, { status: string; message: string }>>({});
+  const [enrichingId, setEnrichingId] = useState<string | null>(null);
+  const [enrichResult, setEnrichResult] = useState<Record<string, { status: string; message: string }>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -107,6 +110,49 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
       }));
     } finally {
       setCatalogRefreshingId(null);
+    }
+  }
+
+  async function handleEnrich(id: string) {
+    setEnrichingId(id);
+    setEnrichResult((prev) => ({
+      ...prev,
+      [id]: { status: "pending", message: "Bezig met AI-verrijking..." },
+    }));
+    try {
+      const res = await fetch("/api/datasources/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data_source_id: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEnrichResult((prev) => ({
+          ...prev,
+          [id]: {
+            status: "error",
+            message: data.error || "Verrijking mislukt",
+          },
+        }));
+      } else {
+        setEnrichResult((prev) => ({
+          ...prev,
+          [id]: {
+            status: "success",
+            message: `${data.columnsUpdated || 0} kolommen verrijkt (${data.tablesProcessed || 0} tabellen)`,
+          },
+        }));
+      }
+    } catch (err) {
+      setEnrichResult((prev) => ({
+        ...prev,
+        [id]: {
+          status: "error",
+          message: err instanceof Error ? err.message : "Verrijking mislukt",
+        },
+      }));
+    } finally {
+      setEnrichingId(null);
     }
   }
 
@@ -214,6 +260,16 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
                       Catalog
                     </Button>
                     <Button
+                      variant="secondary"
+                      size="sm"
+                      icon="auto_awesome"
+                      loading={enrichingId === ds.id}
+                      onClick={() => handleEnrich(ds.id)}
+                      title="Gebruik AI om business-beschrijvingen voor alle kolommen te genereren"
+                    >
+                      Verrijk
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="sm"
                       icon="delete"
@@ -229,6 +285,19 @@ export default function DatasourceList({ datasources }: DatasourceListProps) {
                       }`}
                     >
                       {catalogResult[ds.id].message}
+                    </p>
+                  )}
+                  {enrichResult[ds.id] && (
+                    <p
+                      className={`mt-1 text-[11px] text-right ${
+                        enrichResult[ds.id].status === "success"
+                          ? "text-emerald-600"
+                          : enrichResult[ds.id].status === "pending"
+                            ? "text-hero-blue"
+                            : "text-red-500"
+                      }`}
+                    >
+                      {enrichResult[ds.id].message}
                     </p>
                   )}
                 </td>

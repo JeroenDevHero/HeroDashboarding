@@ -3,7 +3,15 @@ import {
   executeDatabricksQuery,
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
-import { analyzeColumnStats } from "@/lib/datasources/intelligence";
+import {
+  discoverPostgresSchema,
+  samplePostgresTable,
+  type PostgresConfig,
+} from "@/lib/datasources/postgres";
+import {
+  analyzeColumnStats,
+  analyzePostgresColumnStats,
+} from "@/lib/datasources/intelligence";
 
 export interface CatalogEntry {
   id: string;
@@ -14,6 +22,9 @@ export interface CatalogEntry {
   column_name: string;
   column_type: string;
   column_description: string | null;
+  table_description: string | null;
+  semantic_description: string | null;
+  semantic_description_source: "db-comment" | "ai-generated" | "user" | null;
   sample_values: unknown[] | null;
   is_nullable: boolean;
   ordinal_position: number;
@@ -164,9 +175,124 @@ export async function analyzeDatabricksSource(
 }
 
 /**
+ * Analyze a PostgreSQL / Supabase data source: discover every table and column
+ * in the configured schema, take a small data sample, and upsert the result
+ * into the data_catalog table.
+ */
+export async function analyzePostgresSource(
+  dataSourceId: string,
+  config: PostgresConfig
+): Promise<void> {
+  const schemas = config.schema ? [config.schema] : ["public"];
+  const supabase = createAdminClient();
+
+  let rows: Awaited<ReturnType<typeof discoverPostgresSchema>>;
+  try {
+    rows = await discoverPostgresSchema(config, schemas);
+  } catch (err) {
+    console.error(
+      `[catalog] Failed to discover Postgres schema(s) ${schemas.join(",")}:`,
+      err
+    );
+    return;
+  }
+
+  if (rows.length === 0) {
+    console.warn(
+      `[catalog] No tables found in Postgres schema(s) ${schemas.join(",")} for source ${dataSourceId}`
+    );
+    return;
+  }
+
+  // Group columns by table so we can fetch sample rows per table.
+  const tableMap = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const key = `${row.table_schema}.${row.table_name}`;
+    if (!tableMap.has(key)) tableMap.set(key, []);
+    tableMap.get(key)!.push(row);
+  }
+
+  for (const [key, columns] of tableMap) {
+    const [schema, tableName] = key.split(".", 2);
+
+    let sampleRows: Record<string, unknown>[] = [];
+    try {
+      sampleRows = await samplePostgresTable(config, schema, tableName, 3);
+    } catch (err) {
+      console.warn(
+        `[catalog] Failed to sample ${schema}.${tableName}:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+
+    const catalogRows = columns.map((col) => {
+      const sampleValues = sampleRows
+        .map((row) => row[col.column_name])
+        .filter((v) => v !== null && v !== undefined)
+        .map((v) => {
+          // Ensure JSON-serializable values
+          if (v instanceof Date) return v.toISOString();
+          if (typeof v === "bigint") return v.toString();
+          if (typeof v === "object") {
+            try {
+              JSON.stringify(v);
+              return v;
+            } catch {
+              return String(v);
+            }
+          }
+          return v;
+        });
+
+      return {
+        data_source_id: dataSourceId,
+        catalog_name: "postgres",
+        schema_name: col.table_schema,
+        table_name: col.table_name,
+        column_name: col.column_name,
+        column_type: col.data_type,
+        column_description: col.column_description,
+        table_description: col.table_description,
+        semantic_description: col.column_description || null,
+        semantic_description_source: col.column_description ? "db-comment" : null,
+        sample_values: sampleValues.length > 0 ? sampleValues : null,
+        is_nullable: col.is_nullable,
+        ordinal_position: col.ordinal_position,
+        updated_at: new Date().toISOString(),
+      };
+    });
+
+    const { error } = await supabase.from("data_catalog").upsert(catalogRows, {
+      onConflict:
+        "data_source_id,catalog_name,schema_name,table_name,column_name",
+    });
+
+    if (error) {
+      console.error(
+        `[catalog] Failed to upsert Postgres catalog for ${key}:`,
+        error.message
+      );
+    }
+
+    // Fire-and-forget: analyze column statistics for this table
+    analyzePostgresColumnStats(dataSourceId, config, schema, tableName).catch(
+      (err) =>
+        console.error(
+          `[catalog] Postgres column stats failed for ${key}:`,
+          err instanceof Error ? err.message : err
+        )
+    );
+  }
+
+  console.log(
+    `[catalog] Postgres discovery complete: ${tableMap.size} tables, ${rows.length} columns for source ${dataSourceId}`
+  );
+}
+
+/**
  * Ensure the data catalog is populated for a data source.
- * If the catalog is empty, auto-triggers Databricks schema discovery.
- * Returns true if catalog has entries after the check (existing or newly discovered).
+ * If the catalog is empty, auto-triggers schema discovery based on the data
+ * source type. Returns true if catalog has entries after the check.
  */
 export async function ensureCatalogPopulated(
   dataSourceId: string
@@ -185,7 +311,6 @@ export async function ensureCatalogPopulated(
     `[catalog] Auto-discovering schema for data source ${dataSourceId}...`
   );
 
-  // Fetch data source with its type
   const { data: dataSource } = await supabase
     .from("data_sources")
     .select("*, data_source_type:data_source_types (*)")
@@ -198,16 +323,20 @@ export async function ensureCatalogPopulated(
   }
 
   const typeSlug = dataSource.data_source_type?.slug;
-  if (typeSlug !== "databricks") {
-    console.log(
-      `[catalog] Auto-discover not supported for type: ${typeSlug}`
-    );
-    return false;
-  }
 
   try {
-    const config = dataSource.connection_config as DatabricksConfig;
-    await analyzeDatabricksSource(dataSourceId, config);
+    if (typeSlug === "databricks") {
+      const config = dataSource.connection_config as DatabricksConfig;
+      await analyzeDatabricksSource(dataSourceId, config);
+    } else if (typeSlug === "postgresql" || typeSlug === "supabase-bc") {
+      const config = dataSource.connection_config as PostgresConfig;
+      await analyzePostgresSource(dataSourceId, config);
+    } else {
+      console.log(
+        `[catalog] Auto-discover not supported for type: ${typeSlug}`
+      );
+      return false;
+    }
     console.log(
       `[catalog] Auto-discovery complete for data source ${dataSourceId}`
     );
@@ -268,13 +397,25 @@ export async function getCatalogSummary(
 
   const lines: string[] = [];
   for (const [tableFqn, columns] of tables) {
-    lines.push(`Tabel: ${tableFqn}`);
+    const first = columns[0];
+    const tableHeader = first.table_description
+      ? `Tabel: ${tableFqn} — ${first.table_description}`
+      : `Tabel: ${tableFqn}`;
+    lines.push(tableHeader);
+
     for (const col of columns) {
       let line = `  - ${col.column_name} (${col.column_type})`;
-      if (col.column_description) {
-        line += ` - ${col.column_description}`;
+      // Prefer semantic (business-facing) description when available
+      const description =
+        col.semantic_description || col.column_description || null;
+      if (description) {
+        line += ` - ${description}`;
       }
-      if (col.sample_values && Array.isArray(col.sample_values) && col.sample_values.length > 0) {
+      if (
+        col.sample_values &&
+        Array.isArray(col.sample_values) &&
+        col.sample_values.length > 0
+      ) {
         const samples = col.sample_values
           .slice(0, 3)
           .map((v) => (typeof v === "string" ? `"${v}"` : String(v)))

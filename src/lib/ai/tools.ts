@@ -3,9 +3,14 @@ import {
   executeDatabricksQuery,
   type DatabricksConfig,
 } from "@/lib/datasources/databricks";
+import {
+  executePostgresQuery,
+  type PostgresConfig,
+} from "@/lib/datasources/postgres";
 import { getCatalogSummary } from "@/lib/datasources/catalog";
 import { getDataIntelligence } from "@/lib/datasources/intelligence";
 import { getKnowledgeContext } from "@/lib/actions/knowledge";
+import { getSemanticEntitiesSummary } from "@/lib/datasources/semantic";
 import { generateVisualKnowledgeText } from "@/lib/klipfolio/visual-knowledge";
 
 /** Valid klip_type enum values matching the Postgres enum */
@@ -237,8 +242,16 @@ export async function executePreviewData(
         };
       }
 
-      case "postgresql": {
-        throw new Error("PostgreSQL wordt binnenkort ondersteund");
+      case "postgresql":
+      case "supabase-bc": {
+        const config = dataSource.connection_config as PostgresConfig;
+        const rows = await executePostgresQuery(config, input.query);
+        const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+        return {
+          rows,
+          columns,
+          row_count: rows.length,
+        };
       }
 
       default: {
@@ -311,6 +324,12 @@ export async function executeSaveKnowledge(
 
 export async function executeGetVisualKnowledge(): Promise<string> {
   return generateVisualKnowledgeText();
+}
+
+export async function executeGetSemanticEntities(
+  dataSourceId: string
+): Promise<string> {
+  return getSemanticEntitiesSummary(dataSourceId);
 }
 
 export async function executeListDatasources(userId: string) {

@@ -10,10 +10,22 @@ import { createDataSource } from "@/lib/actions/datasource";
 
 const datasourceTypes = [
   {
+    value: "supabase-bc",
+    label: "Business Central (Supabase)",
+    icon: "hub",
+    description: "Business Central-data gesynchroniseerd naar Supabase",
+  },
+  {
     value: "postgresql",
     label: "PostgreSQL",
     icon: "storage",
     description: "Verbind met een PostgreSQL database",
+  },
+  {
+    value: "databricks",
+    label: "Databricks",
+    icon: "storage",
+    description: "Verbind met een Databricks SQL warehouse",
   },
   {
     value: "rest_api",
@@ -32,12 +44,6 @@ const datasourceTypes = [
     label: "CSV",
     icon: "description",
     description: "Upload of link naar een CSV bestand",
-  },
-  {
-    value: "databricks",
-    label: "Databricks",
-    icon: "storage",
-    description: "Verbind met een Databricks SQL warehouse",
   },
 ];
 
@@ -162,6 +168,7 @@ export default function NewDatasourcePage() {
               placeholder="Korte beschrijving van deze databron"
             />
 
+            {selectedType === "supabase-bc" && <SupabaseBcFields />}
             {selectedType === "postgresql" && <PostgresqlFields />}
             {selectedType === "rest_api" && <RestApiFields />}
             {selectedType === "google_sheets" && <GoogleSheetsFields />}
@@ -187,16 +194,94 @@ export default function NewDatasourcePage() {
   );
 }
 
+function SupabaseBcFields() {
+  return (
+    <>
+      <div className="rounded-md bg-hero-blue-hairline/50 p-3 text-xs text-hero-grey-regular">
+        <p className="mb-1 font-medium text-hero-grey-black">
+          Tip: gebruik een dedicated read-only gebruiker
+        </p>
+        <p>
+          Maak in de BC-Supabase een aparte Postgres-rol aan met alleen{" "}
+          <code>SELECT</code>-rechten op de schema&apos;s die je wilt
+          analyseren. Zo kan de dashboarding-tool nooit per ongeluk data
+          overschrijven.
+        </p>
+      </div>
+      <Input
+        label="Connection string (aanbevolen)"
+        name="connection_string"
+        type="password"
+        placeholder="postgres://readonly:password@db.xxx.supabase.co:5432/postgres"
+        autoComplete="off"
+      />
+      <p className="-mt-2 text-xs text-hero-grey-regular">
+        Gebruik bij voorkeur de Supabase{" "}
+        <span className="font-medium">connection pooler</span> URL (poort 6543)
+        voor betere prestaties.
+      </p>
+      <Input
+        label="Schema (optioneel)"
+        name="schema"
+        placeholder="public"
+        defaultValue="public"
+      />
+      <details className="rounded-md border border-hero-grey-light p-3">
+        <summary className="cursor-pointer text-xs font-medium text-hero-grey-black">
+          Of configureer handmatig (host, poort, ...)
+        </summary>
+        <div className="mt-3 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input label="Host" name="host" placeholder="db.xxx.supabase.co" />
+            <Input
+              label="Poort"
+              name="port"
+              type="number"
+              placeholder="5432"
+              defaultValue="5432"
+            />
+          </div>
+          <Input label="Database" name="database" placeholder="postgres" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input label="Gebruikersnaam" name="username" placeholder="postgres" />
+            <Input
+              label="Wachtwoord"
+              name="password"
+              type="password"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </details>
+      <label className="flex items-center gap-2 text-sm text-hero-grey-black">
+        <input
+          type="checkbox"
+          name="ssl"
+          value="true"
+          defaultChecked
+          className="h-4 w-4 rounded border-hero-grey-light"
+        />
+        SSL gebruiken (aangeraden)
+      </label>
+    </>
+  );
+}
+
 function PostgresqlFields() {
   return (
     <>
+      <Input
+        label="Connection string (optioneel)"
+        name="connection_string"
+        type="password"
+        placeholder="postgres://user:password@host:5432/database"
+        autoComplete="off"
+      />
+      <p className="-mt-2 text-xs text-hero-grey-regular">
+        Laat leeg om met host/poort/wachtwoord te configureren.
+      </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input
-          label="Host"
-          name="host"
-          placeholder="localhost"
-          required
-        />
+        <Input label="Host" name="host" placeholder="localhost" />
         <Input
           label="Poort"
           name="port"
@@ -205,27 +290,26 @@ function PostgresqlFields() {
           defaultValue="5432"
         />
       </div>
-      <Input
-        label="Database"
-        name="database"
-        placeholder="my_database"
-        required
-      />
+      <Input label="Database" name="database" placeholder="my_database" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label="Gebruikersnaam"
           name="username"
           placeholder="postgres"
-          required
         />
         <Input
           label="Wachtwoord"
           name="password"
           type="password"
-          placeholder="Wachtwoord"
-          required
+          autoComplete="off"
         />
       </div>
+      <Input
+        label="Schema (optioneel)"
+        name="schema"
+        placeholder="public"
+        defaultValue="public"
+      />
       <label className="flex items-center gap-2 text-sm text-hero-grey-black">
         <input
           type="checkbox"
@@ -363,15 +447,26 @@ function parseConfigFromForm(
 ): Record<string, unknown> {
   switch (type) {
     case "postgresql":
-    case "mysql":
-      return {
-        host: formData.get("host") as string,
-        port: Number(formData.get("port")) || (type === "postgresql" ? 5432 : 3306),
-        database: formData.get("database") as string,
-        username: formData.get("username") as string,
-        password: formData.get("password") as string,
+    case "supabase-bc":
+    case "mysql": {
+      const connectionString =
+        (formData.get("connection_string") as string | null)?.trim() || "";
+      const base: Record<string, unknown> = {
         ssl: formData.get("ssl") === "true",
+        schema: (formData.get("schema") as string) || "public",
       };
+      if (connectionString) {
+        base.connection_string = connectionString;
+      } else {
+        base.host = (formData.get("host") as string) || "";
+        base.port =
+          Number(formData.get("port")) || (type === "mysql" ? 3306 : 5432);
+        base.database = (formData.get("database") as string) || "";
+        base.username = (formData.get("username") as string) || "";
+        base.password = (formData.get("password") as string) || "";
+      }
+      return base;
+    }
     case "rest_api":
       return {
         base_url: formData.get("base_url") as string,

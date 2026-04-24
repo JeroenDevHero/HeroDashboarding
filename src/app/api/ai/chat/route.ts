@@ -11,6 +11,7 @@ import {
   executeGetKnowledgeContext,
   executeSaveKnowledge,
   executeGetVisualKnowledge,
+  executeGetSemanticEntities,
 } from "@/lib/ai/tools";
 import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
 import { ensureCatalogPopulated } from "@/lib/datasources/catalog";
@@ -151,7 +152,12 @@ Data-query regels:
 - Tel NOOIT preview-rijen als je het totaal wilt weten — gebruik altijd COUNT/SUM in je SQL
 
 Kennisbank:
-- Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge`;
+- Als de gebruiker feitelijke informatie deelt over het bedrijf, sla dit op via save_knowledge
+
+Business-concepten (de semantic layer):
+- Als er hieronder een business-concept staat dat overeenkomt met de vraag van de gebruiker (zelfde naam of een synoniem), GEBRUIK altijd dat SQL-template als vertrekpunt in plaats van zelf de juiste tabellen en joins te zoeken
+- Pas het template alleen aan met de filters / aggregaties die de gebruiker expliciet vraagt
+- Vermeld NOOIT tabel- of kolomnamen in je antwoord aan de gebruiker. Gebruik altijd de Nederlandse business-term uit het concept`;
 
 const TOOLS: Anthropic.Messages.Tool[] = [
   {
@@ -708,15 +714,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch catalog + intelligence for all datasources in parallel
-    const [catalogSummaries, intelligenceSummaries] = await Promise.all([
-      dsIds.length > 0
-        ? Promise.all(dsIds.map((id) => executeGetDataCatalog(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen catalog beschikbaar.")
-        : Promise.resolve("Geen databronnen geconfigureerd."),
-      dsIds.length > 0
-        ? Promise.all(dsIds.map((id) => executeGetDataIntelligence(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen intelligence beschikbaar.")
-        : Promise.resolve("Geen intelligence beschikbaar."),
-    ]);
+    // Fetch catalog + intelligence + semantic concepts for all datasources in parallel
+    const [catalogSummaries, intelligenceSummaries, semanticSummaries] =
+      await Promise.all([
+        dsIds.length > 0
+          ? Promise.all(dsIds.map((id) => executeGetDataCatalog(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen catalog beschikbaar.")
+          : Promise.resolve("Geen databronnen geconfigureerd."),
+        dsIds.length > 0
+          ? Promise.all(dsIds.map((id) => executeGetDataIntelligence(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen intelligence beschikbaar.")
+          : Promise.resolve("Geen intelligence beschikbaar."),
+        dsIds.length > 0
+          ? Promise.all(dsIds.map((id) => executeGetSemanticEntities(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "")
+          : Promise.resolve(""),
+      ]);
 
     console.log(`[AI Chat] Context pre-loaded in ${Date.now() - preloadStart}ms`);
 
@@ -792,7 +802,11 @@ ${datasourcesText}
 ${catalogSummaries}
 
 --- DATA INTELLIGENCE (bewezen patronen) ---
-${intelligenceSummaries}`;
+${intelligenceSummaries}${
+      semanticSummaries
+        ? `\n\n--- BUSINESS CONCEPTEN (prefereer boven zelf-bouwen) ---\n${semanticSummaries}`
+        : ""
+    }`;
 
     // Cast messages to the expected Anthropic format
     // Content can be a string or a multi-content array (for images)

@@ -27,6 +27,7 @@ interface ConversationListItem {
 interface AIAssistantProps {
   initialConversations: ConversationListItem[];
   initialConversationId?: string;
+  suggestedQuestions?: string[];
 }
 
 /**
@@ -56,6 +57,7 @@ function isConversationInProgress(
 export default function AIAssistant({
   initialConversations,
   initialConversationId,
+  suggestedQuestions = [],
 }: AIAssistantProps) {
   const [conversations, setConversations] = useState(initialConversations);
 
@@ -282,6 +284,7 @@ export default function AIAssistant({
             conversationId={activeConversationId}
             initialMessages={activeMessages}
             wasInProgress={wasInProgress}
+            suggestedQuestions={suggestedQuestions}
             onConversationCreated={handleConversationCreated}
             onFirstMessage={handleFirstMessage}
             onToolCallUpdate={(tc) => setPreviewToolCall(tc)}
