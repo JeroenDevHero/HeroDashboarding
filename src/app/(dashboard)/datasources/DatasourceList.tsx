@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -51,8 +51,19 @@ const statusLabels: Record<string, string> = {
 
 /** Poll cadence while an enrichment job appears to be running. */
 const POLL_INTERVAL_MS = 4000;
-/** Stop polling after this many consecutive intervals with no progress. */
-const IDLE_INTERVALS_BEFORE_STOP = 4;
+/**
+ * Consider enrichment "currently running" when the most recent AI update is
+ * within this window. Anthropic Opus calls can easily take 30-60s per wide
+ * table, so we keep the window generous. Anything older than this gets
+ * treated as a stale job and polling stops.
+ */
+const LIVE_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+/**
+ * Grace period right after the user clicks Verrijk / Catalog. Keeps the
+ * spinner up even before the first row is written, in case the very first
+ * Claude call is slow.
+ */
+const CLICK_GRACE_MS = 30 * 1000; // 30 seconds
 /** Hard ceiling — never poll longer than this after a Verrijk click. */
 const MAX_POLL_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
@@ -178,13 +189,13 @@ export default function DatasourceList({
     for (const s of initialStats) map[s.data_source_id] = s;
     return map;
   });
-
   /**
-   * Track idle intervals per source — once enrichment has run long enough
-   * without numbers moving, we stop polling and fall back to the
-   * "always-refresh-on-mount" view.
+   * Re-evaluate "is this source currently running?" on every tick even if
+   * the stats response is byte-identical. Without this, `isRunning` would
+   * stay stuck on `true` once last_enriched_at crosses the LIVE_WINDOW_MS
+   * boundary, because nothing else would re-render the row.
    */
-  const idleIntervalsRef = useRef<Record<string, number>>({});
+  const [tick, setTick] = useState(0);
 
   const ids = useMemo(() => datasources.map((d) => d.id), [datasources]);
 
@@ -199,22 +210,7 @@ export default function DatasourceList({
       const body = (await res.json()) as { stats: CatalogStats[] };
       setStats((prev) => {
         const next = { ...prev };
-        for (const s of body.stats) {
-          const before = prev[s.data_source_id];
-          if (
-            before &&
-            before.ai_enriched_columns === s.ai_enriched_columns &&
-            before.ai_enriched_tables === s.ai_enriched_tables &&
-            before.total_columns === s.total_columns &&
-            before.embeddings_count === s.embeddings_count
-          ) {
-            idleIntervalsRef.current[s.data_source_id] =
-              (idleIntervalsRef.current[s.data_source_id] ?? 0) + 1;
-          } else {
-            idleIntervalsRef.current[s.data_source_id] = 0;
-          }
-          next[s.data_source_id] = s;
-        }
+        for (const s of body.stats) next[s.data_source_id] = s;
         return next;
       });
     } catch (err) {
@@ -222,25 +218,42 @@ export default function DatasourceList({
     }
   }, [ids]);
 
-  // Decide which sources should currently be polled.
+  /**
+   * Derive active set from the server-side truth (last_enriched_at) instead
+   * of local click-state. This means the "bezig"-indicator:
+   *   - survives a page refresh while enrichment is running on the server,
+   *   - stops automatically ~2 min after the last update, with no idle-
+   *     counter heuristics that can mis-fire on slow Opus calls.
+   * Local `enrichStartedAt` is only used for the 30s grace window right
+   * after a click, before the first row lands in the DB.
+   */
   const activeIds = useMemo(() => {
     const now = Date.now();
     return ids.filter((id) => {
       const startedAt = enrichStartedAt[id];
-      if (!startedAt) return false;
-      if (now - startedAt > MAX_POLL_DURATION_MS) return false;
-      const idle = idleIntervalsRef.current[id] ?? 0;
-      return idle < IDLE_INTERVALS_BEFORE_STOP;
+      if (startedAt && now - startedAt < CLICK_GRACE_MS) return true;
+      if (startedAt && now - startedAt > MAX_POLL_DURATION_MS) return false;
+
+      const s = stats[id];
+      if (!s?.last_enriched_at) return false;
+      const lastMs = new Date(s.last_enriched_at).getTime();
+      if (Number.isNaN(lastMs)) return false;
+      return now - lastMs < LIVE_WINDOW_MS;
     });
-  }, [ids, enrichStartedAt, stats]); // stats dep keeps this in sync with idle counters
+  }, [ids, enrichStartedAt, stats]);
 
   useEffect(() => {
     if (activeIds.length === 0) return;
     const interval = setInterval(() => {
+      setTick((t) => t + 1);
       void fetchStats();
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [activeIds, fetchStats]);
+
+  // Keep the tick var from being flagged as unused by the compiler; it only
+  // exists to force `activeIds` to re-compute on each poll.
+  void tick;
 
   async function handleTest(id: string) {
     setTestingId(id);
@@ -287,7 +300,6 @@ export default function DatasourceList({
         }));
         // Treat catalog refresh like enrichment for polling purposes — totals
         // and embeddings will shift for a few minutes.
-        idleIntervalsRef.current[id] = 0;
         setEnrichStartedAt((prev) => ({ ...prev, [id]: Date.now() }));
         void fetchStats();
       }
@@ -324,7 +336,6 @@ export default function DatasourceList({
         }));
         return;
       }
-      idleIntervalsRef.current[id] = 0;
       setEnrichStartedAt((prev) => ({ ...prev, [id]: Date.now() }));
       void fetchStats();
     } catch (err) {

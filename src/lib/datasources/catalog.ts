@@ -291,6 +291,13 @@ export async function analyzePostgresSource(
           return v;
         });
 
+      // NOTE: deliberately omit `semantic_description` and
+      // `semantic_description_source` here. Supabase upsert overwrites every
+      // provided column on conflict, so including them would wipe existing
+      // AI-enriched descriptions on every catalog refresh. Initial seeding
+      // from the db-comment for brand-new rows is handled below via the
+      // `seed_catalog_semantic_from_comment` RPC, which only touches rows
+      // whose semantic_description is still NULL.
       return {
         data_source_id: dataSourceId,
         catalog_name: "postgres",
@@ -300,8 +307,6 @@ export async function analyzePostgresSource(
         column_type: col.data_type,
         column_description: col.column_description,
         table_description: col.table_description,
-        semantic_description: col.column_description || null,
-        semantic_description_source: col.column_description ? "db-comment" : null,
         sample_values: sampleValues.length > 0 ? sampleValues : null,
         is_nullable: col.is_nullable,
         ordinal_position: col.ordinal_position,
@@ -324,6 +329,29 @@ export async function analyzePostgresSource(
     // Column statistics are opt-in for Postgres — per-column queries on
     // hundreds of tables would crush the source DB. Run them explicitly from
     // /api/datasources/column-stats if/when needed.
+  }
+
+  // Seed semantic_description from db-comments for NEW rows only. Existing
+  // rows with ai-generated / curated descriptions stay untouched.
+  try {
+    const { data: seeded, error: seedErr } = await supabase.rpc(
+      "seed_catalog_semantic_from_comment",
+      { p_data_source_id: dataSourceId }
+    );
+    if (seedErr) {
+      console.warn(
+        `[catalog] Could not seed semantic descriptions from comments: ${seedErr.message}`
+      );
+    } else if (typeof seeded === "number" && seeded > 0) {
+      console.log(
+        `[catalog] Seeded ${seeded} semantic descriptions from db-comments`
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `[catalog] Seed-from-comment RPC failed:`,
+      err instanceof Error ? err.message : err
+    );
   }
 
   console.log(
