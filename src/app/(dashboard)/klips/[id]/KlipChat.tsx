@@ -83,6 +83,7 @@ export default function KlipChat({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [toolStatus, setToolStatus] = useState<ToolStatus>({
     executing: false,
     currentTool: null,
@@ -373,6 +374,31 @@ export default function KlipChat({
     [handleSend]
   );
 
+  const handleCopyMessage = useCallback(async (msg: ChatMessage) => {
+    if (!msg.content) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(msg.content);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = msg.content;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopiedId(msg.id);
+      setTimeout(
+        () => setCopiedId((curr) => (curr === msg.id ? null : curr)),
+        1500
+      );
+    } catch {
+      // Ignore copy failures silently
+    }
+  }, []);
+
   const showDisconnectBanner =
     connectionStatus === "disconnected" || connectionStatus === "error";
 
@@ -420,29 +446,63 @@ export default function KlipChat({
                     key={msg.id}
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2 ${
-                        msg.role === "user"
-                          ? "rounded-br-md bg-hero-blue text-white"
-                          : "rounded-bl-md bg-white shadow-[0_1px_3px_rgba(7,56,137,0.08)]"
-                      }`}
-                    >
-                      {msg.content ? (
-                        msg.role === "user" ? (
-                          <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
-                            {msg.content}
-                          </p>
+                    <div className="max-w-[85%]">
+                      <div
+                        className={`rounded-2xl px-3.5 py-2 ${
+                          msg.role === "user"
+                            ? "rounded-br-md bg-hero-blue text-white"
+                            : "rounded-bl-md bg-white shadow-[0_1px_3px_rgba(7,56,137,0.08)]"
+                        }`}
+                      >
+                        {msg.content ? (
+                          msg.role === "user" ? (
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+                              {msg.content}
+                            </p>
+                          ) : (
+                            <MarkdownRenderer
+                              content={msg.content}
+                              className="text-hero-grey-black"
+                            />
+                          )
                         ) : (
-                          <MarkdownRenderer
-                            content={msg.content}
-                            className="text-hero-grey-black"
-                          />
-                        )
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium" />
-                          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium [animation-delay:150ms]" />
-                          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium [animation-delay:300ms]" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium" />
+                            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium [animation-delay:150ms]" />
+                            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-hero-blue-medium [animation-delay:300ms]" />
+                          </div>
+                        )}
+                      </div>
+                      {msg.role === "assistant" && msg.content && (
+                        <div className="mt-1 flex items-center gap-1 px-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyMessage(msg)}
+                            className={`rounded p-1 transition-colors cursor-pointer hover:text-hero-blue ${
+                              copiedId === msg.id
+                                ? "text-emerald-600"
+                                : "text-hero-grey-regular"
+                            }`}
+                            aria-label={
+                              copiedId === msg.id
+                                ? "Gekopieerd"
+                                : "Kopieer antwoord"
+                            }
+                            title={
+                              copiedId === msg.id
+                                ? "Gekopieerd naar klembord"
+                                : "Kopieer antwoord om te delen met collega"
+                            }
+                          >
+                            <span className="material-symbols-rounded text-[16px]">
+                              {copiedId === msg.id ? "check" : "content_copy"}
+                            </span>
+                          </button>
+                          {copiedId === msg.id && (
+                            <span className="text-[10px] text-emerald-600">
+                              Gekopieerd
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
