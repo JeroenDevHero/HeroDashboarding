@@ -8,10 +8,8 @@ import {
   samplePostgresTable,
   type PostgresConfig,
 } from "@/lib/datasources/postgres";
-import {
-  analyzeColumnStats,
-  analyzePostgresColumnStats,
-} from "@/lib/datasources/intelligence";
+import { analyzeColumnStats } from "@/lib/datasources/intelligence";
+import { refreshCatalogEmbeddings } from "@/lib/datasources/retrieval";
 
 export interface CatalogEntry {
   id: string;
@@ -172,6 +170,20 @@ export async function analyzeDatabricksSource(
       )
     );
   }
+
+  // Rebuild table-level embeddings so semantic retrieval reflects the new
+  // catalog. Skipped silently when OPENAI_API_KEY is absent.
+  try {
+    const embedding = await refreshCatalogEmbeddings(dataSourceId);
+    console.log(
+      `[catalog] Embeddings: ${embedding.embedded} new, ${embedding.skipped} unchanged, ${embedding.tables} total${embedding.reason ? ` (${embedding.reason})` : ""}`
+    );
+  } catch (err) {
+    console.error(
+      `[catalog] Embeddings refresh failed for ${dataSourceId}:`,
+      err instanceof Error ? err.message : err
+    );
+  }
 }
 
 /**
@@ -274,19 +286,28 @@ export async function analyzePostgresSource(
       );
     }
 
-    // Fire-and-forget: analyze column statistics for this table
-    analyzePostgresColumnStats(dataSourceId, config, schema, tableName).catch(
-      (err) =>
-        console.error(
-          `[catalog] Postgres column stats failed for ${key}:`,
-          err instanceof Error ? err.message : err
-        )
-    );
+    // Column statistics are opt-in for Postgres — per-column queries on
+    // hundreds of tables would crush the source DB. Run them explicitly from
+    // /api/datasources/column-stats if/when needed.
   }
 
   console.log(
     `[catalog] Postgres discovery complete: ${tableMap.size} tables, ${rows.length} columns for source ${dataSourceId}`
   );
+
+  // Rebuild table-level embeddings so semantic retrieval reflects the new
+  // catalog. Skipped silently when OPENAI_API_KEY is absent.
+  try {
+    const embedding = await refreshCatalogEmbeddings(dataSourceId);
+    console.log(
+      `[catalog] Embeddings: ${embedding.embedded} new, ${embedding.skipped} unchanged, ${embedding.tables} total${embedding.reason ? ` (${embedding.reason})` : ""}`
+    );
+  } catch (err) {
+    console.error(
+      `[catalog] Embeddings refresh failed for ${dataSourceId}:`,
+      err instanceof Error ? err.message : err
+    );
+  }
 }
 
 /**
@@ -380,18 +401,35 @@ export async function getCatalogSummary(
   dataSourceId: string
 ): Promise<string> {
   const entries = await getCatalogForSource(dataSourceId);
+  return formatCatalogSummary(entries);
+}
 
+/**
+ * Focused summary: only includes the tables listed in `tables`. Used by the
+ * AI chat route after semantic retrieval has narrowed the catalog to the
+ * top-K relevant tables for the user's question.
+ */
+export async function getFocusedCatalogSummary(
+  dataSourceId: string,
+  tables: { schema_name: string; table_name: string }[]
+): Promise<string> {
+  if (tables.length === 0) return getCatalogSummary(dataSourceId);
+  const keys = new Set(tables.map((t) => `${t.schema_name}.${t.table_name}`));
+  const entries = (await getCatalogForSource(dataSourceId)).filter((e) =>
+    keys.has(`${e.schema_name}.${e.table_name}`)
+  );
+  return formatCatalogSummary(entries);
+}
+
+function formatCatalogSummary(entries: CatalogEntry[]): string {
   if (entries.length === 0) {
     return "Geen catalogus beschikbaar voor deze databron. Mogelijk moet de catalog eerst worden geanalyseerd.";
   }
 
-  // Group by table
   const tables = new Map<string, CatalogEntry[]>();
   for (const entry of entries) {
     const key = `${entry.catalog_name}.${entry.schema_name}.${entry.table_name}`;
-    if (!tables.has(key)) {
-      tables.set(key, []);
-    }
+    if (!tables.has(key)) tables.set(key, []);
     tables.get(key)!.push(entry);
   }
 
@@ -405,12 +443,9 @@ export async function getCatalogSummary(
 
     for (const col of columns) {
       let line = `  - ${col.column_name} (${col.column_type})`;
-      // Prefer semantic (business-facing) description when available
       const description =
         col.semantic_description || col.column_description || null;
-      if (description) {
-        line += ` - ${description}`;
-      }
+      if (description) line += ` - ${description}`;
       if (
         col.sample_values &&
         Array.isArray(col.sample_values) &&
@@ -424,7 +459,7 @@ export async function getCatalogSummary(
       }
       lines.push(line);
     }
-    lines.push(""); // blank line between tables
+    lines.push("");
   }
 
   return lines.join("\n").trim();

@@ -230,12 +230,13 @@ function SupabaseBcFields() {
         <Input
           label="Tabel-prefix (optioneel)"
           name="table_prefix"
-          placeholder="bc_hero_ai_v1_0_%"
+          placeholder="bv. bc_hero_ai_v1_0_%"
         />
       </div>
       <p className="-mt-2 text-xs text-hero-grey-regular">
-        Beperk de catalog tot tabellen die matchen met deze LIKE-pattern. Laat
-        leeg om álle tabellen in het schema te analyseren.
+        Leeg laten = álle tabellen in het schema analyseren (aanbevolen, want
+        semantic retrieval kiest per vraag de relevante tabellen). Vul alleen in
+        als je de catalog expliciet wil beperken.
       </p>
       <details className="rounded-md border border-hero-grey-light p-3">
         <summary className="cursor-pointer text-xs font-medium text-hero-grey-black">

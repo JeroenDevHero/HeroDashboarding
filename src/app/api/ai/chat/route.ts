@@ -14,7 +14,12 @@ import {
   executeGetSemanticEntities,
 } from "@/lib/ai/tools";
 import { learnFromKlipCreation } from "@/lib/datasources/intelligence";
-import { ensureCatalogPopulated } from "@/lib/datasources/catalog";
+import {
+  ensureCatalogPopulated,
+  getCatalogSummary,
+  getFocusedCatalogSummary,
+} from "@/lib/datasources/catalog";
+import { searchRelevantTables } from "@/lib/datasources/retrieval";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +91,12 @@ Werkwijze:
 3. Maak de klip aan met create_klip
 4. Klaar - bevestig het resultaat
 
-BELANGRIJK: Ga DIRECT aan de slag. Roep NIET list_datasources, get_data_catalog, get_data_intelligence of get_knowledge_context aan - die data staat al hieronder.
+BELANGRIJK: Ga DIRECT aan de slag. Roep NIET list_datasources, get_data_intelligence of get_knowledge_context aan - die data staat al hieronder.
+
+Over de data catalog:
+- Voor grote databronnen (honderden tabellen) tonen we alleen de TOP RELEVANTE tabellen voor de huidige vraag, op basis van semantische zoekopdracht over tabel-omschrijvingen.
+- Zie je het kopje "[Relevante tabellen voor deze vraag (top N):]" dan is de lijst gefilterd. Staat de tabel die je zoekt er NIET bij, roep dan get_data_catalog aan met het data_source_id om de volledige catalog op te halen.
+- Is de lijst NIET gefilterd (geen top-N-kopje zichtbaar), dan heb je al alle tabellen.
 
 Opmaak:
 - Gebruik ALTIJD nette, leesbare Nederlandse namen (geen veldnamen met underscores)
@@ -714,17 +724,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch catalog + intelligence + semantic concepts for all datasources in parallel
+    // Extract the last user message text — we use it as the retrieval query
+    // so only the most relevant tables are injected into the prompt.
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+    const retrievalQuery =
+      typeof lastUserMsg?.content === "string"
+        ? lastUserMsg.content
+        : Array.isArray(lastUserMsg?.content)
+          ? (lastUserMsg.content.find(
+              (b) => (b as { type: string }).type === "text"
+            ) as { text?: string } | undefined)?.text || ""
+          : "";
+
+    // Semantic-retrieval catalog: for each data source, ask pgvector for the
+    // top-K most relevant tables for the user's question and build a focused
+    // summary. Falls back to the full catalog when retrieval returns nothing
+    // (no OPENAI_API_KEY, no embeddings yet, or tiny schemas).
+    const TOP_K_TABLES = 25;
     const [catalogSummaries, intelligenceSummaries, semanticSummaries] =
       await Promise.all([
         dsIds.length > 0
-          ? Promise.all(dsIds.map((id) => executeGetDataCatalog(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen catalog beschikbaar.")
+          ? Promise.all(
+              dsIds.map(async (id) => {
+                try {
+                  const matched = retrievalQuery
+                    ? await searchRelevantTables(id, retrievalQuery, TOP_K_TABLES)
+                    : [];
+                  if (matched.length > 0) {
+                    const focused = await getFocusedCatalogSummary(id, matched);
+                    return `[Relevante tabellen voor deze vraag (top ${matched.length}):]\n${focused}`;
+                  }
+                  return await getCatalogSummary(id);
+                } catch (err) {
+                  console.error(`[AI Chat] Catalog retrieval failed for ${id}:`, err);
+                  return "";
+                }
+              })
+            ).then(
+              (r) => r.filter(Boolean).join("\n\n") || "Geen catalog beschikbaar."
+            )
           : Promise.resolve("Geen databronnen geconfigureerd."),
         dsIds.length > 0
-          ? Promise.all(dsIds.map((id) => executeGetDataIntelligence(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "Geen intelligence beschikbaar.")
+          ? Promise.all(
+              dsIds.map((id) => executeGetDataIntelligence(id).catch(() => ""))
+            ).then(
+              (r) =>
+                r.filter(Boolean).join("\n\n") || "Geen intelligence beschikbaar."
+            )
           : Promise.resolve("Geen intelligence beschikbaar."),
         dsIds.length > 0
-          ? Promise.all(dsIds.map((id) => executeGetSemanticEntities(id).catch(() => ""))).then((r) => r.filter(Boolean).join("\n\n") || "")
+          ? Promise.all(
+              dsIds.map((id) => executeGetSemanticEntities(id).catch(() => ""))
+            ).then((r) => r.filter(Boolean).join("\n\n") || "")
           : Promise.resolve(""),
       ]);
 
