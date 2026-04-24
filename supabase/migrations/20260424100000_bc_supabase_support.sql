@@ -149,6 +149,8 @@ CREATE INDEX IF NOT EXISTS idx_query_patterns_quality
 CREATE OR REPLACE FUNCTION update_query_pattern_quality()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   IF NEW.query_pattern_id IS NOT NULL THEN

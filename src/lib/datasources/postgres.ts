@@ -17,6 +17,12 @@ export interface PostgresConfig {
   ssl?: boolean;
   schema?: string;
   connection_string?: string;
+  /**
+   * Optional LIKE-pattern to restrict catalog discovery to a subset of
+   * tables (e.g. `bc_hero_ai_v1_0_%` for the BC-AI endpoint). When set, only
+   * tables matching the pattern are included in the catalog.
+   */
+  table_prefix?: string;
   /** Statement timeout in milliseconds. Defaults to 30_000 (30s). */
   statement_timeout_ms?: number;
 }
@@ -140,6 +146,9 @@ export async function discoverPostgresSchema(
   config: PostgresConfig,
   schemas: string[] = ["public"]
 ): Promise<DiscoveredColumn[]> {
+  const hasPrefix =
+    typeof config.table_prefix === "string" && config.table_prefix.length > 0;
+
   const query = `
     SELECT
       c.table_schema,
@@ -161,6 +170,7 @@ export async function discoverPostgresSchema(
       ON t.table_schema = c.table_schema AND t.table_name = c.table_name
     WHERE c.table_schema = ANY($1::text[])
       AND t.table_type IN ('BASE TABLE', 'VIEW')
+      ${hasPrefix ? "AND c.table_name LIKE $2" : ""}
     ORDER BY c.table_schema, c.table_name, c.ordinal_position;
   `;
 
@@ -168,7 +178,9 @@ export async function discoverPostgresSchema(
   try {
     await client.connect();
     await client.query("BEGIN READ ONLY");
-    const result = await client.query(query, [schemas]);
+    const params: unknown[] = [schemas];
+    if (hasPrefix) params.push(config.table_prefix);
+    const result = await client.query(query, params);
     await client.query("COMMIT");
     await client.end();
     return result.rows as DiscoveredColumn[];
