@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CatalogEntry } from "@/lib/datasources/catalog";
 
-const ENRICH_MODEL = "claude-opus-4-6";
+const ENRICH_MODEL = "claude-opus-4-7";
 
 /**
  * Heuristics for detecting a Business-Central-style schema, so we can give

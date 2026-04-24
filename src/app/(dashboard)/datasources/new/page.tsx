@@ -238,6 +238,14 @@ function SupabaseBcFields() {
         semantic retrieval kiest per vraag de relevante tabellen). Vul alleen in
         als je de catalog expliciet wil beperken.
       </p>
+      <Input
+        label="Tabellen uitsluiten (optioneel, komma-gescheiden LIKE-patterns)"
+        name="excluded_table_patterns"
+        placeholder="bv. bc_fivetran_%,bc_microsoft_analytics_v0_5_%"
+      />
+      <p className="-mt-2 text-xs text-hero-grey-regular">
+        Handig om duplicaat-endpoints (bv. Fivetran) uit de catalog te houden.
+      </p>
       <details className="rounded-md border border-hero-grey-light p-3">
         <summary className="cursor-pointer text-xs font-medium text-hero-grey-black">
           Of configureer handmatig (host, poort, ...)
@@ -465,11 +473,20 @@ function parseConfigFromForm(
         (formData.get("connection_string") as string | null)?.trim() || "";
       const tablePrefix =
         (formData.get("table_prefix") as string | null)?.trim() || "";
+      const excludedPatternsRaw =
+        (formData.get("excluded_table_patterns") as string | null)?.trim() || "";
+      const excludedPatterns = excludedPatternsRaw
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
       const base: Record<string, unknown> = {
         ssl: formData.get("ssl") === "true",
         schema: (formData.get("schema") as string) || "public",
       };
       if (tablePrefix) base.table_prefix = tablePrefix;
+      if (excludedPatterns.length > 0) {
+        base.excluded_table_patterns = excludedPatterns;
+      }
       if (connectionString) {
         base.connection_string = connectionString;
       } else {

@@ -23,6 +23,12 @@ export interface PostgresConfig {
    * tables matching the pattern are included in the catalog.
    */
   table_prefix?: string;
+  /**
+   * Optional list of LIKE-patterns identifying tables that must be excluded
+   * from the catalog (e.g. `['bc_fivetran_%']` to drop Fivetran-duplicated
+   * BC endpoints). Combined with `table_prefix` using AND NOT.
+   */
+  excluded_table_patterns?: string[];
   /** Statement timeout in milliseconds. Defaults to 30_000 (30s). */
   statement_timeout_ms?: number;
 }
@@ -148,6 +154,25 @@ export async function discoverPostgresSchema(
 ): Promise<DiscoveredColumn[]> {
   const hasPrefix =
     typeof config.table_prefix === "string" && config.table_prefix.length > 0;
+  const excludedPatterns = (config.excluded_table_patterns ?? []).filter(
+    (p) => typeof p === "string" && p.length > 0
+  );
+
+  // Parameter bindings: $1 = schemas, $2..N = prefix (optional) then excluded patterns.
+  const params: unknown[] = [schemas];
+  const conditions: string[] = [
+    "c.table_schema = ANY($1::text[])",
+    "t.table_type IN ('BASE TABLE', 'VIEW')",
+  ];
+
+  if (hasPrefix) {
+    params.push(config.table_prefix);
+    conditions.push(`c.table_name LIKE $${params.length}`);
+  }
+  for (const pattern of excludedPatterns) {
+    params.push(pattern);
+    conditions.push(`c.table_name NOT LIKE $${params.length}`);
+  }
 
   const query = `
     SELECT
@@ -168,9 +193,7 @@ export async function discoverPostgresSchema(
     FROM information_schema.columns c
     INNER JOIN information_schema.tables t
       ON t.table_schema = c.table_schema AND t.table_name = c.table_name
-    WHERE c.table_schema = ANY($1::text[])
-      AND t.table_type IN ('BASE TABLE', 'VIEW')
-      ${hasPrefix ? "AND c.table_name LIKE $2" : ""}
+    WHERE ${conditions.join("\n      AND ")}
     ORDER BY c.table_schema, c.table_name, c.ordinal_position;
   `;
 
@@ -178,8 +201,6 @@ export async function discoverPostgresSchema(
   try {
     await client.connect();
     await client.query("BEGIN READ ONLY");
-    const params: unknown[] = [schemas];
-    if (hasPrefix) params.push(config.table_prefix);
     const result = await client.query(query, params);
     await client.query("COMMIT");
     await client.end();

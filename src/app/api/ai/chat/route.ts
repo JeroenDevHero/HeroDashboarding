@@ -76,7 +76,7 @@ async function saveConversationProgress(
     .eq("user_id", userId);
 }
 
-const AI_MODEL = "claude-opus-4-6";
+const AI_MODEL = "claude-opus-4-7";
 
 const BASE_SYSTEM_PROMPT = `Je bent de Hero AI Assistent, aangedreven door ${AI_MODEL} (Anthropic). Je helpt gebruikers bij het maken van dashboard-visualisaties (klips) op basis van ECHTE bedrijfsdata.
 

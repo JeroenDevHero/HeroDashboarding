@@ -27,3 +27,7 @@ npm-debug.log*
 
 # vercel
 .vercel
+
+# one-off script output
+scripts/*.log
+scripts/bc-sync-out/
