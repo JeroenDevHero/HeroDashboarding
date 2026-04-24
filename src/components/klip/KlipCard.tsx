@@ -81,13 +81,12 @@ export default function KlipCard({ klip, onEdit, onDelete }: KlipCardProps) {
       headerAction={headerAction}
       className="h-full flex flex-col"
     >
-      <div className="flex-1 min-h-0">
+      <div className="flex-1">
         {hasData ? (
           <div
             style={{
               width: "100%",
-              height: "100%",
-              minHeight: hasComponents ? 260 : 200,
+              height: hasComponents ? 360 : 200,
             }}
           >
             <KlipChart
