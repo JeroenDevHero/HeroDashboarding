@@ -163,9 +163,53 @@ export async function executeUpdateKlip(
     ...(input.config || {}),
   };
 
-  // Update sample_data from preview if available
+  // Update sample_data from preview, but only if the preview's columns are
+  // compatible with the (merged) config's field references. Otherwise we
+  // would break the chart: e.g. config still expects `nog_te_factureren_omzet`
+  // but the new preview only has `omzet`, causing Recharts to render empty
+  // bars / an empty axis that looks like "rows" instead of a chart.
   if (previewData && typeof previewData === 'object' && 'rows' in (previewData as Record<string, unknown>)) {
-    newConfig.sample_data = (previewData as Record<string, unknown>).rows;
+    const previewRows = (previewData as Record<string, unknown>).rows;
+    if (Array.isArray(previewRows) && previewRows.length > 0) {
+      const firstRow = previewRows[0] as Record<string, unknown>;
+      const rowKeys = new Set(Object.keys(firstRow));
+
+      const referenced: string[] = [];
+      for (const key of [
+        "x_field",
+        "y_field",
+        "bar_field",
+        "line_field",
+        "status_field",
+        "stage_field",
+        "size_field",
+        "dimension_field",
+        "date_field",
+        "title_field",
+        "description_field",
+        "before_field",
+        "after_field",
+        "group_by",
+      ]) {
+        const v = newConfig[key];
+        if (typeof v === "string" && v) referenced.push(v);
+      }
+      const yFields = newConfig.y_fields;
+      if (Array.isArray(yFields)) {
+        for (const f of yFields) {
+          if (typeof f === "string" && f) referenced.push(f);
+        }
+      }
+
+      const missing = referenced.filter((f) => !rowKeys.has(f));
+      if (referenced.length === 0 || missing.length === 0) {
+        newConfig.sample_data = previewRows;
+      } else {
+        console.warn(
+          `[executeUpdateKlip] Skipping sample_data overwrite for klip ${input.klip_id}: preview is missing config fields [${missing.join(", ")}]. Preview keys: [${Array.from(rowKeys).join(", ")}]. Existing sample_data preserved.`
+        );
+      }
+    }
   }
 
   // Auto-enable legend for multi-series charts

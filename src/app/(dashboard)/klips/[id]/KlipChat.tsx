@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
@@ -76,6 +77,7 @@ export default function KlipChat({
   initialConversationId,
   initialMessages = [],
 }: KlipChatProps) {
+  const router = useRouter();
   // Open automatically when there is existing history so the user sees their conversation
   const [isOpen, setIsOpen] = useState(initialMessages.length > 0);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -155,6 +157,9 @@ export default function KlipChat({
 
       const assistantMessageId = generateId();
       let assistantContent = "";
+      // Track whether any tool that mutates the klip succeeded so we can
+      // refresh the server-rendered chart once the stream ends.
+      let klipMutated = false;
 
       setMessages((prev) => [
         ...prev,
@@ -272,13 +277,21 @@ export default function KlipChat({
                 }
 
                 case "tool_execution_result": {
-                  const toolName = (
-                    event as unknown as { tool_name: string }
-                  ).tool_name;
+                  const toolEvent = event as unknown as {
+                    tool_name: string;
+                    success?: boolean;
+                  };
                   setToolStatus({
                     executing: false,
-                    currentTool: toolName,
+                    currentTool: toolEvent.tool_name,
                   });
+                  if (
+                    toolEvent.success !== false &&
+                    (toolEvent.tool_name === "update_klip" ||
+                      toolEvent.tool_name === "create_klip")
+                  ) {
+                    klipMutated = true;
+                  }
                   resetActivityTimeout(handleTimeout);
                   break;
                 }
@@ -321,6 +334,11 @@ export default function KlipChat({
         setIsLoading(false);
         setToolStatus({ executing: false, currentTool: null });
         abortControllerRef.current = null;
+        // Re-fetch the server component so the klip chart picks up the new
+        // config / sample_data without requiring a manual page refresh.
+        if (klipMutated) {
+          router.refresh();
+        }
       }
     },
     [
@@ -331,6 +349,7 @@ export default function KlipChat({
       connectionStatus,
       resetActivityTimeout,
       clearActivityTimeout,
+      router,
     ]
   );
 

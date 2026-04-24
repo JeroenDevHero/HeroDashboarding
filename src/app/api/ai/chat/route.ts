@@ -138,6 +138,12 @@ Wijzigen van bestaande klips:
 - Bij update_klip worden alleen de meegegeven velden overschreven, de rest blijft behouden
 - Er wordt automatisch een versie-snapshot bewaard zodat de gebruiker terug kan
 
+BELANGRIJK bij update_klip — kolomnamen moeten matchen:
+- De chart gebruikt de veldnamen uit config (x_field, y_field, y_fields, bar_field, line_field, etc.) om de juiste waardes uit sample_data te halen.
+- Als je een nieuwe preview_data draait voor een bestaande klip, ZORG dat de SQL-aliassen EXACT gelijk zijn aan de veldnamen in de huidige config. Bijvoorbeeld: als bar_field="nog_te_factureren_omzet", schrijf dan "SELECT ... AS nog_te_factureren_omzet", NIET "AS omzet".
+- Wijzig je de aliassen met opzet, stuur dan in DEZELFDE update_klip call ook de nieuwe config-velden mee (bijv. nieuwe bar_field/line_field/y_fields die matchen met de nieuwe kolomnamen).
+- Voeg NOOIT alleen een description/name update toe zonder te checken dat de laatste preview-kolommen matchen — anders verbergt de systeem het oude sample_data en blijft de klip correct, maar is je nieuwe data genegeerd.
+
 Config best practices - geef ALTIJD mee:
 - x_field: het label/categorie veld (VERPLICHT voor charts)
 - y_field of y_fields: het/de waarde-veld(en) (VERPLICHT voor charts)
